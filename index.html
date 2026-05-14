@@ -1,0 +1,1406 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>아파트 실거래가 월별 시세 변동</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --primary: #2563eb;
+      --border: #d1d5db;
+      --danger: #b91c1c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Malgun Gothic", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+    .container {
+      max-width: 980px;
+      margin: 24px auto;
+      padding: 0 16px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+      margin-bottom: 16px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+    }
+    p.desc {
+      margin: 0;
+      color: var(--muted);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .section-title {
+      margin: 0 0 10px;
+      font-size: 15px;
+      font-weight: 800;
+    }
+    .common-section {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .common-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .compare-wrap {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .compare-card {
+      border-radius: 10px;
+      padding: 12px;
+      border: 1px solid var(--border);
+    }
+    .compare-card.c1 {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+    }
+    .compare-card.c2 {
+      background: #fef2f2;
+      border-color: #fecaca;
+    }
+    .compare-card.c3 {
+      background: #ecfdf5;
+      border-color: #bbf7d0;
+    }
+    .compare-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .compare-card-head .section-title {
+      margin: 0;
+    }
+    .compare-card-head .btn-link {
+      margin-top: 0;
+      flex-shrink: 0;
+    }
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    label {
+      font-weight: 600;
+      font-size: 14px;
+    }
+    input, select, button {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 14px;
+      width: 100%;
+    }
+    button {
+      background: var(--primary);
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      margin-top: 8px;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+    .full {
+      grid-column: 1 / -1;
+    }
+    #message {
+      margin-top: 8px;
+      font-size: 14px;
+      color: var(--muted);
+      white-space: pre-wrap;
+    }
+    #message.error { color: var(--danger); }
+    .hint {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+    .table-wrap {
+      overflow-x: auto;
+      margin-top: 12px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th, td {
+      border-bottom: 1px solid var(--border);
+      padding: 8px 6px;
+      text-align: left;
+      white-space: nowrap;
+    }
+    th {
+      background: #f9fafb;
+      font-weight: 700;
+    }
+    .empty-row {
+      color: var(--muted);
+    }
+    .table-actions {
+      display: flex;
+      justify-content: center;
+      margin-top: 10px;
+    }
+    .compare-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 12px;
+      border: 1px solid transparent;
+    }
+    #loadMoreBtn {
+      width: auto;
+      padding: 8px 16px;
+      margin-top: 0;
+      background: #374151;
+    }
+    .page-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .page-header-text { flex: 1; min-width: 200px; }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .btn-secondary {
+      background: #fff;
+      color: var(--primary);
+      border: 1px solid var(--primary);
+      margin-top: 0;
+      width: auto;
+      padding: 8px 14px;
+      font-size: 13px;
+    }
+    .btn-secondary:hover { background: #eff6ff; }
+    .btn-link {
+      background: transparent;
+      color: var(--primary);
+      border: none;
+      margin-top: 4px;
+      padding: 4px 0;
+      width: auto;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .btn-link:hover { color: #1d4ed8; }
+    .star-btn {
+      background: transparent;
+      border: none;
+      margin: 0;
+      padding: 2px 6px;
+      width: auto;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      color: #9ca3af;
+    }
+    .star-btn.filled {
+      color: #f59e0b;
+    }
+    .star-btn:hover { opacity: 0.85; }
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-panel {
+      background: var(--card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      max-width: 520px;
+      width: 100%;
+      max-height: min(80vh, 560px);
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+    }
+    .modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-head h2 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 800;
+    }
+    .modal-close {
+      background: #f3f4f6;
+      color: var(--text);
+      border: none;
+      margin: 0;
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      border-radius: 8px;
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .modal-close:hover { background: #e5e7eb; }
+    .modal-body {
+      padding: 12px 16px 16px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .fav-empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 28px 12px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .fav-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 10px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 8px;
+      background: #fafafa;
+    }
+    .fav-row-main {
+      flex: 1;
+      min-width: 0;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .fav-row-title { font-weight: 700; color: var(--text); }
+    .fav-row-meta { color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .btn-remove-fav {
+      background: #fee2e2;
+      color: var(--danger);
+      border: 1px solid #fecaca;
+      margin: 0;
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      border-radius: 8px;
+      font-size: 16px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .btn-remove-fav:hover { background: #fecaca; }
+    .fav-row.pickable { cursor: pointer; }
+    .fav-row.pickable:hover { background: #eff6ff; border-color: #bfdbfe; }
+    @media (max-width: 900px) {
+      .compare-wrap { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 760px) {
+      .grid { grid-template-columns: 1fr; }
+      .common-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="page-header">
+        <div class="page-header-text">
+          <h1>아파트 실거래가 월별 시세 변동</h1>
+          <p class="desc">공공데이터포털(국토교통부 아파트 매매 실거래자료) API 기반 월별 평균 거래금액 차트</p>
+        </div>
+        <div class="header-actions">
+          <button type="button" class="btn-secondary" id="openFavoritesBtn">즐겨찾기 보기</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="common-section">
+        <p class="section-title">공통 조회 조건</p>
+        <div class="common-grid">
+          <div class="field">
+            <label for="guSelect">서울 구</label>
+            <select id="guSelect"></select>
+          </div>
+          <div class="field">
+            <label for="months">조회 개월 수</label>
+            <select id="months">
+              <option value="6">6개월</option>
+              <option value="12" selected>12개월</option>
+              <option value="24">24개월</option>
+              <option value="36">36개월</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="compare-wrap">
+        <div class="compare-card c1">
+          <div class="compare-card-head">
+            <p class="section-title">비교 1</p>
+            <button type="button" class="btn-link" data-fav-pick-slot="1">즐겨찾기에서 선택</button>
+          </div>
+          <div class="compare-grid">
+            <div class="field">
+              <label for="dongSelect1">동</label>
+              <select id="dongSelect1"><option value="">선택 안함</option></select>
+            </div>
+            <div class="field">
+              <label for="aptSelect1">아파트</label>
+              <select id="aptSelect1"><option value="">선택 안함</option></select>
+            </div>
+            <div class="field">
+              <label for="areaSelect1">평형</label>
+              <select id="areaSelect1"><option value="">전체</option></select>
+            </div>
+          </div>
+        </div>
+
+        <div class="compare-card c2">
+          <div class="compare-card-head">
+            <p class="section-title">비교 2</p>
+            <button type="button" class="btn-link" data-fav-pick-slot="2">즐겨찾기에서 선택</button>
+          </div>
+          <div class="compare-grid">
+            <div class="field">
+              <label for="dongSelect2">동</label>
+              <select id="dongSelect2"><option value="">선택 안함</option></select>
+            </div>
+            <div class="field">
+              <label for="aptSelect2">아파트</label>
+              <select id="aptSelect2"><option value="">선택 안함</option></select>
+            </div>
+            <div class="field">
+              <label for="areaSelect2">평형</label>
+              <select id="areaSelect2"><option value="">전체</option></select>
+            </div>
+          </div>
+        </div>
+
+        <div class="compare-card c3">
+          <div class="compare-card-head">
+            <p class="section-title">비교 3</p>
+            <button type="button" class="btn-link" data-fav-pick-slot="3">즐겨찾기에서 선택</button>
+          </div>
+          <div class="compare-grid">
+            <div class="field">
+              <label for="dongSelect3">동</label>
+              <select id="dongSelect3"><option value="">선택 안함</option></select>
+            </div>
+            <div class="field">
+              <label for="aptSelect3">아파트</label>
+              <select id="aptSelect3"><option value="">선택 안함</option></select>
+            </div>
+            <div class="field">
+              <label for="areaSelect3">평형</label>
+              <select id="areaSelect3"><option value="">전체</option></select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="field full">
+        <button id="loadBtn">차트 조회</button>
+        <div id="message">서울 구 선택 후 비교1~3의 동/아파트/평형을 설정하세요.</div>
+        <div class="hint">
+          - 비교1~3 각각 다른 동 선택이 가능합니다.<br />
+          - 아파트를 선택하면 해당 아파트의 평형만 표시됩니다.<br />
+          - 브라우저에서 CORS 제한이 있을 수 있습니다. 그 경우 로컬 프록시/서버를 통해 호출해야 합니다.
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <canvas id="priceChart" height="120"></canvas>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:44px;">즐겨찾기</th>
+              <th>거래일</th>
+              <th>비교조건</th>
+              <th>동</th>
+              <th>실거래가</th>
+              <th>층</th>
+              <th>호수</th>
+            </tr>
+          </thead>
+          <tbody id="dealTableBody">
+            <tr class="empty-row"><td colspan="7">조회하면 최근 10건이 표시됩니다.</td></tr>
+          </tbody>
+        </table>
+        <div class="table-actions">
+          <button id="loadMoreBtn" type="button" style="display:none;">더 보기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="favoritesModal" aria-hidden="true">
+    <div class="modal-panel" role="dialog" aria-labelledby="favoritesModalTitle">
+      <div class="modal-head">
+        <h2 id="favoritesModalTitle">즐겨찾기</h2>
+        <button type="button" class="modal-close" id="closeFavoritesModal" aria-label="닫기">×</button>
+      </div>
+      <div class="modal-body" id="favoritesModalBody"></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="slotFavModal" aria-hidden="true">
+    <div class="modal-panel" role="dialog" aria-labelledby="slotFavModalTitle">
+      <div class="modal-head">
+        <h2 id="slotFavModalTitle">즐겨찾기에서 선택</h2>
+        <button type="button" class="modal-close" id="closeSlotFavModal" aria-label="닫기">×</button>
+      </div>
+      <div class="modal-body" id="slotFavModalBody"></div>
+    </div>
+  </div>
+
+  <script>
+    const SERVICE_KEY = "f519fd4c95a7eefb13d61320f5bba983a37b307632b0570ffabab42b00992de0";
+    const ENDPOINTS = [
+      "https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev",
+      "https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade"
+    ];
+    const SEOUL_GU_OPTIONS = [
+      { code: "11110", name: "종로구" }, { code: "11140", name: "중구" }, { code: "11170", name: "용산구" },
+      { code: "11200", name: "성동구" }, { code: "11215", name: "광진구" }, { code: "11230", name: "동대문구" },
+      { code: "11260", name: "중랑구" }, { code: "11290", name: "성북구" }, { code: "11305", name: "강북구" },
+      { code: "11320", name: "도봉구" }, { code: "11350", name: "노원구" }, { code: "11380", name: "은평구" },
+      { code: "11410", name: "서대문구" }, { code: "11440", name: "마포구" }, { code: "11470", name: "양천구" },
+      { code: "11500", name: "강서구" }, { code: "11530", name: "구로구" }, { code: "11545", name: "금천구" },
+      { code: "11560", name: "영등포구" }, { code: "11590", name: "동작구" }, { code: "11620", name: "관악구" },
+      { code: "11650", name: "서초구" }, { code: "11680", name: "강남구" }, { code: "11710", name: "송파구" },
+      { code: "11740", name: "강동구" }
+    ];
+    const SEOUL_DONGS_BY_GU = {
+      "11110": ["청운동", "신교동", "궁정동", "효자동", "삼청동", "부암동", "평창동", "무악동", "사직동", "창신동"],
+      "11140": ["소공동", "회현동", "명동", "필동", "장충동", "광희동", "을지로동", "신당동", "다산동", "약수동"],
+      "11170": ["후암동", "용산동", "남영동", "청파동", "원효로동", "효창동", "용문동", "이촌동", "이태원동", "한남동"],
+      "11200": ["왕십리동", "마장동", "사근동", "행당동", "응봉동", "금호동", "옥수동", "성수동", "송정동", "용답동"],
+      "11215": ["중곡동", "능동", "구의동", "광장동", "자양동", "화양동", "군자동"],
+      "11230": ["용신동", "제기동", "청량리동", "회기동", "휘경동", "이문동", "장안동"],
+      "11260": ["면목동", "상봉동", "중화동", "묵동", "망우동", "신내동"],
+      "11290": ["성북동", "삼선동", "동선동", "돈암동", "안암동", "보문동", "정릉동", "길음동", "종암동", "장위동"],
+      "11305": ["삼양동", "미아동", "송중동", "송천동", "삼각산동", "번동", "수유동", "우이동", "인수동"],
+      "11320": ["쌍문동", "방학동", "창동", "도봉동"],
+      "11350": ["월계동", "공릉동", "하계동", "중계동", "상계동"],
+      "11380": ["녹번동", "불광동", "갈현동", "구산동", "대조동", "응암동", "역촌동", "신사동", "증산동", "수색동"],
+      "11410": ["충현동", "천연동", "북아현동", "신촌동", "연희동", "홍제동", "홍은동", "남가좌동", "북가좌동"],
+      "11440": ["아현동", "공덕동", "도화동", "용강동", "대흥동", "염리동", "신수동", "서강동", "서교동", "합정동"],
+      "11470": ["목동", "신월동", "신정동"],
+      "11500": ["염창동", "등촌동", "화곡동", "우장산동", "가양동", "발산동", "공항동", "방화동", "마곡동"],
+      "11530": ["신도림동", "구로동", "가리봉동", "고척동", "개봉동", "오류동", "천왕동", "항동"],
+      "11545": ["가산동", "독산동", "시흥동"],
+      "11560": ["영등포동", "여의동", "당산동", "도림동", "문래동", "양평동", "신길동", "대림동"],
+      "11590": ["노량진동", "상도동", "흑석동", "사당동", "대방동", "신대방동"],
+      "11620": ["봉천동", "신림동", "남현동"],
+      "11650": ["서초동", "잠원동", "반포동", "방배동", "양재동", "내곡동", "염곡동", "우면동", "원지동"],
+      "11680": ["역삼동", "개포동", "청담동", "삼성동", "대치동", "신사동", "논현동", "압구정동", "세곡동", "자곡동"],
+      "11710": ["잠실동", "신천동", "풍납동", "송파동", "석촌동", "삼전동", "가락동", "문정동", "장지동", "위례동"],
+      "11740": ["강일동", "상일동", "명일동", "고덕동", "암사동", "천호동", "성내동", "길동", "둔촌동"]
+    };
+    const loadBtn = document.getElementById("loadBtn");
+    const guSelect = document.getElementById("guSelect");
+    const monthsSelect = document.getElementById("months");
+    const dealTableBody = document.getElementById("dealTableBody");
+    const loadMoreBtn = document.getElementById("loadMoreBtn");
+    const messageEl = document.getElementById("message");
+    const favoritesModal = document.getElementById("favoritesModal");
+    const favoritesModalBody = document.getElementById("favoritesModalBody");
+    const slotFavModal = document.getElementById("slotFavModal");
+    const slotFavModalBody = document.getElementById("slotFavModalBody");
+    const slotFavModalTitle = document.getElementById("slotFavModalTitle");
+    const aptAreaCache = {};
+    const monthDataPromiseCache = {};
+    const TABLE_PAGE_SIZE = 10;
+    let slotFavTargetId = null;
+    let allDealPoints = [];
+    let visibleDealCount = TABLE_PAGE_SIZE;
+    let chart;
+    const slots = [
+      {
+        id: 1,
+        color: "#2563eb",
+        dongEl: document.getElementById("dongSelect1"),
+        aptEl: document.getElementById("aptSelect1"),
+        areaEl: document.getElementById("areaSelect1")
+      },
+      {
+        id: 2,
+        color: "#ef4444",
+        dongEl: document.getElementById("dongSelect2"),
+        aptEl: document.getElementById("aptSelect2"),
+        areaEl: document.getElementById("areaSelect2")
+      },
+      {
+        id: 3,
+        color: "#10b981",
+        dongEl: document.getElementById("dongSelect3"),
+        aptEl: document.getElementById("aptSelect3"),
+        areaEl: document.getElementById("areaSelect3")
+      }
+    ];
+
+    function setMessage(text, isError = false) {
+      messageEl.textContent = text;
+      messageEl.className = isError ? "error" : "";
+    }
+
+    function ymToString(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      return `${y}${m}`;
+    }
+
+    function formatKrw(value) {
+      return Number(value).toLocaleString("ko-KR") + "만원";
+    }
+
+    function parseDealAmount(amountText) {
+      return Number(String(amountText).replaceAll(",", "").trim());
+    }
+
+    function normalizeDongName(name) {
+      return String(name || "").replaceAll(" ", "").trim();
+    }
+
+    function toDongKey(name) {
+      return normalizeDongName(name).replace(/\d+동$/u, "동");
+    }
+
+    function isSameDong(itemDongName, selectedDongName) {
+      const itemKey = toDongKey(itemDongName);
+      const selectedKey = toDongKey(selectedDongName);
+      return Boolean(itemKey) && Boolean(selectedKey) && itemKey === selectedKey;
+    }
+
+    function getDongName(item) {
+      return String(item?.umdNm || item?.dong || item?.법정동 || "").trim();
+    }
+
+    function getAptName(item) {
+      return String(item?.aptNm || item?.apartment || item?.아파트 || "").trim();
+    }
+
+    function getAreaValue(item) {
+      const raw = item?.excluUseAr || item?.exclusiveArea || item?.전용면적;
+      const n = Number.parseFloat(String(raw ?? "").replaceAll(",", "").trim());
+      return Number.isFinite(n) ? n : null;
+    }
+
+    function getAreaFloorValue(item) {
+      const area = getAreaValue(item);
+      if (area == null) return null;
+      return Math.floor(area);
+    }
+
+    function getDealDateLabel(item, fallbackYm) {
+      const y = String(item?.dealYear || "").trim();
+      const m = String(item?.dealMonth || "").trim().padStart(2, "0");
+      const d = String(item?.dealDay || "").trim().padStart(2, "0");
+      if (y && m && d) return `${y}-${m}-${d}`;
+      return `${fallbackYm}-01`;
+    }
+
+    function getHoName(item) {
+      return String(item?.ho || item?.hoNm || item?.호 || "").trim();
+    }
+
+    function getFloor(item) {
+      return String(item?.floor || item?.층 || "").trim();
+    }
+
+    function setupGuSelect() {
+      guSelect.innerHTML = SEOUL_GU_OPTIONS.map((gu) => (
+        `<option value="${gu.code}">${gu.name}</option>`
+      )).join("");
+      guSelect.value = "11680";
+    }
+
+    function renderDongOptions(selectEl, dongNames) {
+      const options = ['<option value="">선택 안함</option>'];
+      for (const dong of dongNames) {
+        options.push(`<option value="${dong}">${dong}</option>`);
+      }
+      selectEl.innerHTML = options.join("");
+      selectEl.disabled = false;
+    }
+
+    function renderAptOptions(selectEl, aptNames) {
+      const options = ['<option value="">선택 안함</option>'];
+      for (const aptName of aptNames) {
+        options.push(`<option value="${aptName}">${aptName}</option>`);
+      }
+      selectEl.innerHTML = options.join("");
+      selectEl.disabled = false;
+    }
+
+    function renderAreaOptions(selectEl, areaValues) {
+      const options = ['<option value="">전체</option>'];
+      for (const area of areaValues) {
+        options.push(`<option value="${area}">${area}㎡</option>`);
+      }
+      selectEl.innerHTML = options.join("");
+      selectEl.disabled = false;
+    }
+
+    function renderAreaPlaceholder(selectEl, text) {
+      selectEl.innerHTML = `<option value="">${text}</option>`;
+      selectEl.disabled = true;
+    }
+
+    function buildTargetMonths(monthCount) {
+      const result = [];
+      const cursor = new Date();
+      cursor.setDate(1);
+      for (let i = monthCount - 1; i >= 0; i--) {
+        const d = new Date(cursor.getFullYear(), cursor.getMonth() - i, 1);
+        result.push({
+          ym: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
+          ymParam: ymToString(d)
+        });
+      }
+      return result;
+    }
+
+    async function fetchOneMonth({ serviceKey, lawdCd, ymParam }) {
+      let lastError;
+
+      for (const endpoint of ENDPOINTS) {
+        try {
+          const params = new URLSearchParams({
+            serviceKey,
+            LAWD_CD: lawdCd,
+            DEAL_YMD: ymParam,
+            pageNo: "1",
+            numOfRows: "1000",
+            _type: "json"
+          });
+          const url = `${endpoint}?${params.toString()}`;
+          const res = await fetch(url);
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status} (${endpoint.includes("TradeDev") ? "개발" : "운영"} 엔드포인트)`);
+          }
+
+          const data = await res.json();
+          const header = data?.response?.header;
+          const resultCode = String(header?.resultCode ?? "");
+          const isSuccess = resultCode === "00" || resultCode === "000";
+          if (!isSuccess) {
+            throw new Error(
+              `${header?.resultMsg || "API 오류"} (코드: ${resultCode || "N/A"}, ${endpoint.includes("TradeDev") ? "개발" : "운영"} 엔드포인트)`
+            );
+          }
+          const items = data?.response?.body?.items?.item || [];
+          return Array.isArray(items) ? items : [items];
+        } catch (err) {
+          lastError = err;
+        }
+      }
+
+      throw lastError || new Error("알 수 없는 API 오류");
+    }
+
+    function fetchOneMonthCached({ lawdCd, ymParam }) {
+      const key = `${lawdCd}::${ymParam}`;
+      if (!monthDataPromiseCache[key]) {
+        monthDataPromiseCache[key] = fetchOneMonth({ serviceKey: SERVICE_KEY, lawdCd, ymParam })
+          .catch((err) => {
+            delete monthDataPromiseCache[key];
+            throw err;
+          });
+      }
+      return monthDataPromiseCache[key];
+    }
+
+    function collectDealPoints(monthlyRows, condition) {
+      const points = [];
+      for (const { ym, items } of monthlyRows) {
+        for (const it of items) {
+          if (condition.dong && !isSameDong(getDongName(it), condition.dong)) continue;
+          if (condition.apt && getAptName(it) !== condition.apt) continue;
+          if (condition.area) {
+            const area = getAreaFloorValue(it);
+            if (area == null || String(area) !== condition.area) continue;
+          }
+
+          const price = parseDealAmount(it.dealAmount);
+          if (!Number.isFinite(price) || price <= 0) continue;
+          const rawDong = String(getDongName(it) || "").trim();
+          const fallbackDong = String(condition.dong || "").trim();
+          const af = getAreaFloorValue(it);
+          points.push({
+            dateLabel: getDealDateLabel(it, ym),
+            price,
+            aptName: getAptName(it) || "-",
+            dongName: rawDong || fallbackDong || "-",
+            areaFloor: af != null ? String(af) : "",
+            hoName: getHoName(it) || "-",
+            floor: getFloor(it) || "-",
+            lineLabel: condition.label,
+            lineColor: condition.color,
+            lawdCd: condition.lawdCd
+          });
+        }
+      }
+
+      points.sort((a, b) => a.dateLabel.localeCompare(b.dateLabel));
+      return points;
+    }
+
+    function loadDongOptionsByGu(lawdCd) {
+      const fixedDongs = Array.isArray(SEOUL_DONGS_BY_GU[lawdCd]) ? SEOUL_DONGS_BY_GU[lawdCd] : [];
+      slots.forEach((slot) => {
+        renderDongOptions(slot.dongEl, fixedDongs);
+        renderAptOptions(slot.aptEl, []);
+        renderAreaPlaceholder(slot.areaEl, "아파트를 먼저 선택하세요");
+      });
+    }
+
+    async function loadAptAreaOptions({ lawdCd, dongName }) {
+      const key = `${lawdCd}::${dongName}`;
+      if (aptAreaCache[key]) {
+        return aptAreaCache[key];
+      }
+
+      const targetMonths = buildTargetMonths(24);
+      const aptSet = new Set();
+      const areaByAptSet = {};
+      const monthResults = await Promise.allSettled(
+        targetMonths.map((m) => fetchOneMonthCached({ lawdCd, ymParam: m.ymParam }))
+      );
+      for (const result of monthResults) {
+        if (result.status !== "fulfilled") continue;
+        const items = result.value;
+        for (const item of items) {
+          if (!isSameDong(getDongName(item), dongName)) continue;
+          const aptName = getAptName(item);
+          if (!aptName) continue;
+          aptSet.add(aptName);
+          if (!areaByAptSet[aptName]) areaByAptSet[aptName] = new Set();
+            const area = getAreaFloorValue(item);
+          if (area != null) areaByAptSet[aptName].add(String(area));
+        }
+      }
+
+      const aptNames = Array.from(aptSet).sort((a, b) => a.localeCompare(b, "ko"));
+      const areaByApt = {};
+      for (const aptName of aptNames) {
+        areaByApt[aptName] = Array.from(areaByAptSet[aptName] || []).sort((a, b) => Number(a) - Number(b));
+      }
+      aptAreaCache[key] = { aptNames, areaByApt };
+      return aptAreaCache[key];
+    }
+
+    function buildComparisonDatasets(monthlyRows, conditions) {
+      const labels = monthlyRows.map((row) => row.ym);
+      const datasets = conditions.map((condition) => {
+        const data = monthlyRows.map(({ items }) => {
+          const prices = items
+            .filter((it) => !condition.dong || isSameDong(getDongName(it), condition.dong))
+            .filter((it) => getAptName(it) === condition.apt)
+            .filter((it) => {
+              if (!condition.area) return true;
+              const area = getAreaFloorValue(it);
+              return area != null && String(area) === condition.area;
+            })
+            .map((it) => parseDealAmount(it.dealAmount))
+            .filter((n) => Number.isFinite(n) && n > 0);
+          if (!prices.length) return null;
+          return Math.round(prices.reduce((sum, n) => sum + n, 0) / prices.length);
+        });
+
+        return {
+          label: condition.label,
+          data,
+          borderColor: condition.color,
+          backgroundColor: `${condition.color}33`,
+          fill: false,
+          tension: 0.2,
+          spanGaps: true,
+          pointRadius: 3,
+          showLine: true
+        };
+      });
+
+      return { labels, datasets };
+    }
+
+    function drawChart(labels, datasets) {
+      if (chart) chart.destroy();
+      chart = new Chart(document.getElementById("priceChart"), {
+        type: "line",
+        data: {
+          labels,
+          datasets
+        },
+        options: {
+          responsive: true,
+          interaction: { mode: "index", intersect: false },
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: (ctx) => {
+                  if (ctx.raw == null) return "거래 데이터 없음";
+                  return `${ctx.dataset.label}: ${formatKrw(ctx.raw)}`;
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              ticks: {
+                callback: (v) => Number(v).toLocaleString("ko-KR")
+              }
+            }
+          }
+        }
+      });
+    }
+
+    const FAVORITES_STORAGE_KEY = "aptPriceCompareFavorites";
+
+    function readFavorites() {
+      try {
+        const raw = localStorage.getItem(FAVORITES_STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        const list = Array.isArray(parsed) ? parsed : [];
+        return list.map((e) => ({
+          lawdCd: String(e?.lawdCd ?? "").trim(),
+          guName: String(e?.guName ?? "").trim(),
+          dong: String(e?.dong ?? "").trim(),
+          apt: String(e?.apt ?? "").trim(),
+          area: e?.area != null && String(e.area).trim() !== "" ? String(e.area).trim() : ""
+        }));
+      } catch {
+        return [];
+      }
+    }
+
+    function writeFavorites(list) {
+      localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(list));
+    }
+
+    function favoriteKey(entry) {
+      const lawdCd = String(entry?.lawdCd ?? "").trim();
+      const dong = normalizeDongName(entry.dong);
+      const apt = String(entry?.apt ?? "").trim();
+      const area = String(entry?.area ?? "").trim();
+      const base = `${lawdCd}|${dong}|${apt}`;
+      if (!area) {
+        return base;
+      }
+      return `${base}|${area}`;
+    }
+
+    function isFavoriteEntry(entry) {
+      const k = favoriteKey(entry);
+      return readFavorites().some((e) => favoriteKey(e) === k);
+    }
+
+    function toggleFavorite(entry) {
+      const list = readFavorites();
+      const k = favoriteKey(entry);
+      const idx = list.findIndex((e) => favoriteKey(e) === k);
+      if (idx >= 0) {
+        list.splice(idx, 1);
+      } else {
+        list.push({
+          lawdCd: entry.lawdCd,
+          guName: String(entry.guName || "").trim(),
+          dong: String(entry.dong || "").trim(),
+          apt: String(entry.apt || "").trim(),
+          area: entry.area != null && String(entry.area).trim() !== "" ? String(entry.area).trim() : ""
+        });
+      }
+      writeFavorites(list);
+    }
+
+    function removeFavoriteByKey(key) {
+      writeFavorites(readFavorites().filter((e) => favoriteKey(e) !== key));
+    }
+
+    function getCurrentGuName() {
+      return guSelect.options[guSelect.selectedIndex]?.text?.trim() || "";
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    function pickAreaForSlot(areas, fav) {
+      const list = Array.isArray(areas) ? areas.map(String) : [];
+      const saved = String(fav?.area || "").trim();
+      if (saved && list.includes(saved)) {
+        return saved;
+      }
+      if (saved) {
+        const n = Math.floor(Number.parseFloat(saved));
+        if (Number.isFinite(n) && list.includes(String(n))) {
+          return String(n);
+        }
+      }
+      if (list.length === 1) {
+        return list[0];
+      }
+      return "";
+    }
+
+    async function applyFavoriteToSlot(slotId, fav) {
+      const slot = slots.find((s) => s.id === slotId);
+      if (!slot) return;
+      const targetLawdCd = String(fav.lawdCd || "").trim() || guSelect.value;
+      const fixedDongs = Array.isArray(SEOUL_DONGS_BY_GU[targetLawdCd]) ? SEOUL_DONGS_BY_GU[targetLawdCd] : [];
+
+      if (targetLawdCd !== guSelect.value) {
+        guSelect.value = targetLawdCd;
+        loadDongOptionsByGu(targetLawdCd);
+      } else {
+        renderDongOptions(slot.dongEl, fixedDongs);
+      }
+
+      if (fav.dong && !fixedDongs.includes(fav.dong)) {
+        const opt = document.createElement("option");
+        opt.value = fav.dong;
+        opt.textContent = fav.dong;
+        slot.dongEl.appendChild(opt);
+      }
+      slot.dongEl.value = fav.dong || "";
+      slot.aptEl.disabled = true;
+      slot.aptEl.innerHTML = '<option value="">불러오는 중...</option>';
+      renderAreaPlaceholder(slot.areaEl, "아파트를 먼저 선택하세요");
+      try {
+        const data = await loadAptAreaOptions({ lawdCd: targetLawdCd, dongName: fav.dong });
+        renderAptOptions(slot.aptEl, data.aptNames);
+        const aptPick = String(fav.apt || "").trim();
+        if (aptPick && data.aptNames.includes(aptPick)) {
+          slot.aptEl.value = aptPick;
+        } else {
+          slot.aptEl.value = "";
+        }
+        const aptName = slot.aptEl.value.trim();
+        if (aptName) {
+          const areas = Array.isArray(data.areaByApt?.[aptName]) ? data.areaByApt[aptName] : [];
+          renderAreaOptions(slot.areaEl, areas);
+          slot.areaEl.value = pickAreaForSlot(areas, fav);
+        } else {
+          renderAreaPlaceholder(slot.areaEl, "아파트를 먼저 선택하세요");
+        }
+      } catch (err) {
+        setMessage(`즐겨찾기 적용 실패(비교${slotId}): ${err.message}`, true);
+      } finally {
+        slot.aptEl.disabled = false;
+      }
+    }
+
+    function renderManageFavoritesModal() {
+      const list = readFavorites().slice().sort((a, b) => favoriteKey(a).localeCompare(favoriteKey(b)));
+      if (!list.length) {
+        favoritesModalBody.innerHTML = '<p class="fav-empty">즐겨찾기된 아파트가 없습니다.</p>';
+        return;
+      }
+      favoritesModalBody.innerHTML = list.map((f) => {
+        const k = favoriteKey(f);
+        const kEnc = encodeURIComponent(k);
+        const title = escapeHtml(f.apt || "-");
+        const meta = escapeHtml(
+          `${f.guName || ""} · ${f.dong || ""}${f.area ? ` · ${f.area}㎡` : " · 평형 전체"}`
+        );
+        return (
+          `<div class="fav-row">
+          <button type="button" class="star-btn filled" data-fav-modal-toggle="${kEnc}" title="즐겨찾기 해제">★</button>
+          <div class="fav-row-main">
+            <div class="fav-row-title">${title}</div>
+            <div class="fav-row-meta">${meta}</div>
+          </div>
+          <button type="button" class="btn-remove-fav" data-fav-remove="${kEnc}" title="목록에서 제거">×</button>
+        </div>`
+        );
+      }).join("");
+    }
+
+    function renderSlotFavModal() {
+      const list = readFavorites().slice().sort((a, b) => favoriteKey(a).localeCompare(favoriteKey(b)));
+      if (!list.length) {
+        slotFavModalBody.innerHTML = (
+          '<p class="section-title" style="margin-top:0;">즐겨찾기에서 선택</p>' +
+          '<p class="fav-empty">즐겨찾기를 먼저 추가해주세요.</p>' +
+          '<p class="hint" style="margin-top:0;">거래 목록의 별(☆/★)을 눌러 단지를 저장한 뒤 다시 시도해주세요.</p>'
+        );
+        return;
+      }
+      slotFavModalBody.innerHTML = (
+        '<p class="section-title" style="margin-top:0;">즐겨찾기</p>' +
+        `<p class="hint" style="margin-top:0; margin-bottom:10px;">비교 ${slotFavTargetId}에 적용할 단지를 선택하세요. 별을 누르면 목록에서 해제할 수 있습니다.</p>` +
+        list.map((f) => {
+          const k = favoriteKey(f);
+          const kEnc = encodeURIComponent(k);
+          const filled = isFavoriteEntry(f);
+          const starClass = filled ? "star-btn filled" : "star-btn";
+          const starChar = filled ? "★" : "☆";
+          const title = escapeHtml(f.apt || "-");
+          const meta = escapeHtml(
+            `${f.guName || ""} · ${f.dong || ""}${f.area ? ` · ${f.area}㎡` : " · 평형 전체"}`
+          );
+          return (
+            `<div class="fav-row pickable" data-fav-pick-key="${kEnc}" role="button" tabindex="0">
+            <button type="button" class="${starClass}" data-slot-star="${kEnc}" title="즐겨찾기">${starChar}</button>
+            <div class="fav-row-main">
+              <div class="fav-row-title">${title}</div>
+              <div class="fav-row-meta">${meta}</div>
+            </div>
+          </div>`
+          );
+        }).join("")
+      );
+    }
+
+    function openSlotFavoritePicker(slotId) {
+      slotFavTargetId = slotId;
+      slotFavModalTitle.textContent = `비교 ${slotId} — 즐겨찾기에서 선택`;
+      renderSlotFavModal();
+      slotFavModal.classList.add("open");
+      slotFavModal.setAttribute("aria-hidden", "false");
+    }
+
+    function renderDealTable() {
+      const current = allDealPoints.slice(0, visibleDealCount);
+      if (!current.length) {
+        dealTableBody.innerHTML = '<tr class="empty-row"><td colspan="7">조회 결과가 없습니다.</td></tr>';
+        loadMoreBtn.style.display = "none";
+        return;
+      }
+
+      dealTableBody.innerHTML = current.map((p) => {
+        const lawdCd = p.lawdCd || guSelect.value;
+        const areaStr = String(p.areaFloor || "").trim();
+        const favEntry = {
+          lawdCd,
+          guName: getCurrentGuName(),
+          dong: p.dongName,
+          apt: p.aptName,
+          area: areaStr
+        };
+        const filled = isFavoriteEntry(favEntry);
+        const starClass = filled ? "star-btn filled" : "star-btn";
+        const starChar = filled ? "★" : "☆";
+        const dongEnc = encodeURIComponent(p.dongName);
+        const aptEnc = encodeURIComponent(p.aptName);
+        const areaEnc = encodeURIComponent(areaStr);
+        return (
+          `<tr>
+          <td><button type="button" class="${starClass}" data-fav-star="1" data-lawd="${lawdCd}" data-dong="${dongEnc}" data-apt="${aptEnc}" data-area="${areaEnc}" title="즐겨찾기">${starChar}</button></td>
+          <td>${p.dateLabel}</td>
+          <td><span class="compare-tag" style="color:${p.lineColor}; border-color:${p.lineColor}; background:${p.lineColor}22;">${p.lineLabel}</span></td>
+          <td>${p.dongName}</td>
+          <td>${formatKrw(p.price)}</td>
+          <td>${p.floor}</td>
+          <td>${p.hoName}</td>
+        </tr>`
+        );
+      }).join("");
+
+      if (visibleDealCount < allDealPoints.length) {
+        loadMoreBtn.style.display = "inline-block";
+        loadMoreBtn.textContent = `더 보기 (+${Math.min(TABLE_PAGE_SIZE, allDealPoints.length - visibleDealCount)}건)`;
+      } else {
+        loadMoreBtn.style.display = "none";
+      }
+    }
+
+    async function loadData() {
+      const lawdCd = guSelect.value;
+      const months = Number(monthsSelect.value);
+      const conditions = slots
+        .map((slot) => {
+          const dong = slot.dongEl.value.trim();
+          const apt = slot.aptEl.value.trim();
+          const area = slot.areaEl.value.trim();
+          if (!apt) return null;
+          return {
+            id: slot.id,
+            dong,
+            apt,
+            area,
+            color: slot.color,
+            lawdCd,
+            guName: getCurrentGuName(),
+            label: `비교${slot.id}: ${dong || "동 미지정"} / ${apt}${area ? ` / ${area}㎡` : ""}`
+          };
+        })
+        .filter(Boolean);
+
+      if (!lawdCd) {
+        setMessage("서울 구를 선택해주세요.", true);
+        return;
+      }
+      if (conditions.length === 0) {
+        setMessage("비교할 아파트를 1개 이상 선택해주세요. (비어있는 입력은 자동 제외됩니다)", true);
+        return;
+      }
+
+      loadBtn.disabled = true;
+      setMessage("데이터 조회 중...");
+
+      try {
+        const targetMonths = buildTargetMonths(months);
+        const monthlyRows = (await Promise.all(
+          targetMonths.map(async (m) => ({
+            ym: m.ym,
+            items: await fetchOneMonthCached({ lawdCd, ymParam: m.ymParam })
+          }))
+        ));
+
+        const { labels, datasets } = buildComparisonDatasets(monthlyRows, conditions);
+        drawChart(labels, datasets);
+        const points = conditions.flatMap((condition) => collectDealPoints(monthlyRows, condition));
+        allDealPoints = [...points].sort((a, b) => b.dateLabel.localeCompare(a.dateLabel));
+        visibleDealCount = TABLE_PAGE_SIZE;
+        renderDealTable();
+
+        const totalDeals = points.length;
+        const guNameResolved = guSelect.options[guSelect.selectedIndex]?.text || "선택 구";
+        const selectedLabels = conditions.map((c) => c.label).join(" | ");
+        setMessage(`${guNameResolved} / ${selectedLabels} 완료: ${months}개월 조회, 총 거래 ${totalDeals.toLocaleString("ko-KR")}건`);
+      } catch (err) {
+        const isUnauthorized = String(err.message).includes("HTTP 401");
+        setMessage(
+          `조회 실패: ${err.message}\n` +
+          (
+            isUnauthorized
+              ? "401 인증 오류: 1) 해당 API 활용신청/승인 여부 2) 서비스키(일반/디코딩) 3) 계정의 호출 권한을 확인해주세요."
+              : "서비스키(Decoding) 확인 및 CORS/네트워크 환경을 점검해주세요."
+          ),
+          true
+        );
+        allDealPoints = [];
+        visibleDealCount = TABLE_PAGE_SIZE;
+        renderDealTable();
+      } finally {
+        loadBtn.disabled = false;
+      }
+    }
+
+    function bindSlotEvents(slot) {
+      slot.dongEl.addEventListener("change", async () => {
+        const lawdCd = guSelect.value;
+        const dongName = slot.dongEl.value.trim();
+        if (!dongName) {
+          renderAptOptions(slot.aptEl, []);
+          renderAreaPlaceholder(slot.areaEl, "아파트를 먼저 선택하세요");
+          return;
+        }
+        slot.aptEl.disabled = true;
+        slot.aptEl.innerHTML = '<option value="">아파트 목록 불러오는 중...</option>';
+        renderAreaPlaceholder(slot.areaEl, "아파트를 먼저 선택하세요");
+        try {
+          const data = await loadAptAreaOptions({ lawdCd, dongName });
+          renderAptOptions(slot.aptEl, data.aptNames);
+        } catch (err) {
+          renderAptOptions(slot.aptEl, []);
+          setMessage(`비교${slot.id} 아파트 목록 조회 실패: ${err.message}`, true);
+        }
+      });
+
+      slot.aptEl.addEventListener("change", async () => {
+        const lawdCd = guSelect.value;
+        const dongName = slot.dongEl.value.trim();
+        const aptName = slot.aptEl.value.trim();
+        if (!dongName || !aptName) {
+          renderAreaPlaceholder(slot.areaEl, "아파트를 먼저 선택하세요");
+          return;
+        }
+        const cacheKey = `${lawdCd}::${dongName}`;
+        let data = aptAreaCache[cacheKey];
+        if (!data) {
+          data = await loadAptAreaOptions({ lawdCd, dongName });
+        }
+        const areas = Array.isArray(data.areaByApt?.[aptName]) ? data.areaByApt[aptName] : [];
+        renderAreaOptions(slot.areaEl, areas);
+      });
+    }
+
+    guSelect.addEventListener("change", () => {
+      loadDongOptionsByGu(guSelect.value);
+      setMessage("비교1~3 동 목록을 불러왔습니다.");
+    });
+
+    favoritesModalBody.addEventListener("click", (e) => {
+      const rm = e.target.closest("[data-fav-remove]");
+      if (rm) {
+        removeFavoriteByKey(decodeURIComponent(rm.getAttribute("data-fav-remove") || ""));
+        renderManageFavoritesModal();
+        renderDealTable();
+        return;
+      }
+      const tg = e.target.closest("[data-fav-modal-toggle]");
+      if (tg) {
+        const k = decodeURIComponent(tg.getAttribute("data-fav-modal-toggle") || "");
+        const f = readFavorites().find((x) => favoriteKey(x) === k);
+        if (f) {
+          toggleFavorite(f);
+        }
+        renderManageFavoritesModal();
+        renderDealTable();
+      }
+    });
+
+    slotFavModalBody.addEventListener("click", async (e) => {
+      const star = e.target.closest("[data-slot-star]");
+      if (star) {
+        const k = decodeURIComponent(star.getAttribute("data-slot-star") || "");
+        const f = readFavorites().find((x) => favoriteKey(x) === k);
+        if (f) {
+          toggleFavorite(f);
+        }
+        renderSlotFavModal();
+        renderDealTable();
+        return;
+      }
+      const row = e.target.closest("[data-fav-pick-key]");
+      if (!row || !slotFavTargetId) return;
+      const k = decodeURIComponent(row.getAttribute("data-fav-pick-key") || "");
+      const fav = readFavorites().find((x) => favoriteKey(x) === k);
+      if (!fav) return;
+      slotFavModal.classList.remove("open");
+      slotFavModal.setAttribute("aria-hidden", "true");
+      await applyFavoriteToSlot(slotFavTargetId, fav);
+      setMessage(`비교${slotFavTargetId}에 즐겨찾기 단지를 적용했습니다.`);
+    });
+
+    dealTableBody.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-fav-star]");
+      if (!b) return;
+      e.preventDefault();
+      const lawdCd = b.getAttribute("data-lawd") || guSelect.value;
+      const dong = decodeURIComponent(b.getAttribute("data-dong") || "");
+      const apt = decodeURIComponent(b.getAttribute("data-apt") || "");
+      const area = decodeURIComponent(b.getAttribute("data-area") || "").trim();
+      const guName =
+        SEOUL_GU_OPTIONS.find((g) => g.code === String(lawdCd))?.name || getCurrentGuName();
+      toggleFavorite({
+        lawdCd,
+        guName,
+        dong,
+        apt,
+        area
+      });
+      renderDealTable();
+    });
+
+    document.getElementById("openFavoritesBtn").addEventListener("click", () => {
+      renderManageFavoritesModal();
+      favoritesModal.classList.add("open");
+      favoritesModal.setAttribute("aria-hidden", "false");
+    });
+
+    document.getElementById("closeFavoritesModal").addEventListener("click", () => {
+      favoritesModal.classList.remove("open");
+      favoritesModal.setAttribute("aria-hidden", "true");
+    });
+
+    document.getElementById("closeSlotFavModal").addEventListener("click", () => {
+      slotFavModal.classList.remove("open");
+      slotFavModal.setAttribute("aria-hidden", "true");
+    });
+
+    favoritesModal.addEventListener("click", (e) => {
+      if (e.target === favoritesModal) {
+        favoritesModal.classList.remove("open");
+        favoritesModal.setAttribute("aria-hidden", "true");
+      }
+    });
+
+    slotFavModal.addEventListener("click", (e) => {
+      if (e.target === slotFavModal) {
+        slotFavModal.classList.remove("open");
+        slotFavModal.setAttribute("aria-hidden", "true");
+      }
+    });
+
+    document.querySelectorAll("[data-fav-pick-slot]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const sid = Number(btn.getAttribute("data-fav-pick-slot"));
+        if (Number.isFinite(sid)) {
+          openSlotFavoritePicker(sid);
+        }
+      });
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+      if (favoritesModal.classList.contains("open")) {
+        favoritesModal.classList.remove("open");
+        favoritesModal.setAttribute("aria-hidden", "true");
+      }
+      if (slotFavModal.classList.contains("open")) {
+        slotFavModal.classList.remove("open");
+        slotFavModal.setAttribute("aria-hidden", "true");
+      }
+    });
+
+    setupGuSelect();
+    loadDongOptionsByGu(guSelect.value);
+    slots.forEach(bindSlotEvents);
+    loadMoreBtn.addEventListener("click", () => {
+      visibleDealCount += TABLE_PAGE_SIZE;
+      renderDealTable();
+    });
+    loadBtn.addEventListener("click", loadData);
+  </script>
+</body>
+</html>

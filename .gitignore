@@ -1,0 +1,11 @@
+# OS / editor
+Thumbs.db
+Desktop.ini
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# env / secrets (서비스키 등은 여기 두고 코드에서 읽도록 분리 권장)
+.env
+.env.*
