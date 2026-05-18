@@ -35,6 +35,10 @@ const UPSTREAM_BY_PATH = {
   "/api-proxy/trade-dev": "https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev",
   "/api-proxy/trade": "https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade"
 };
+const UPSTREAM_BY_TARGET = {
+  "trade-dev": "https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev",
+  trade: "https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade"
+};
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -80,7 +84,10 @@ function proxyToApi(res, u) {
     });
     return;
   }
-  const upstreamBase = UPSTREAM_BY_PATH[u.pathname];
+  const target = u.searchParams.get("target") || "";
+  const upstreamBase = u.pathname === "/api/proxy"
+    ? UPSTREAM_BY_TARGET[target]
+    : UPSTREAM_BY_PATH[u.pathname];
   if (!upstreamBase) {
     res.writeHead(404);
     res.end("Unknown proxy path");
@@ -88,6 +95,7 @@ function proxyToApi(res, u) {
   }
 
   const params = new URLSearchParams(u.search);
+  params.delete("target");
   params.set("serviceKey", SERVICE_KEY);
   const upstreamUrl = `${upstreamBase}?${params.toString()}`;
 
@@ -118,7 +126,7 @@ http
       return;
     }
 
-    if (u.pathname.startsWith("/api-proxy/")) {
+    if (u.pathname.startsWith("/api-proxy/") || u.pathname === "/api/proxy") {
       proxyToApi(res, u);
       return;
     }

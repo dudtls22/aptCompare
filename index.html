@@ -506,8 +506,8 @@
 
   <script>
     const API_PROXY_ROUTES = [
-      { path: "/api-proxy/trade-dev", label: "개발" },
-      { path: "/api-proxy/trade", label: "운영" }
+      { target: "trade-dev", label: "개발" },
+      { target: "trade", label: "운영" }
     ];
     const REGION_OPTIONS = [
       { code: "seoul", name: "서울특별시", districtLabel: "서울 구" },
@@ -835,13 +835,14 @@
       for (const route of API_PROXY_ROUTES) {
         try {
           const params = new URLSearchParams({
+            target: route.target,
             LAWD_CD: lawdCd,
             DEAL_YMD: ymParam,
             pageNo: "1",
             numOfRows: "1000",
             _type: "json"
           });
-          const url = `${route.path}?${params.toString()}`;
+          const url = `/api/proxy?${params.toString()}`;
           const res = await fetch(url);
           if (!res.ok) {
             let detail = "";
