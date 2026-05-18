@@ -509,6 +509,10 @@
       { target: "trade-dev", label: "개발" },
       { target: "trade", label: "운영" }
     ];
+    const VERCEL_API_PROXY_BASE = "https://apt-compare-leyg14gyv-young-shin-ma-s-projects.vercel.app";
+    const API_PROXY_BASE = ["localhost", "127.0.0.1"].includes(window.location.hostname)
+      ? ""
+      : VERCEL_API_PROXY_BASE;
     const REGION_OPTIONS = [
       { code: "seoul", name: "서울특별시", districtLabel: "서울 구" },
       { code: "incheon", name: "인천광역시", districtLabel: "구/군" },
@@ -842,7 +846,7 @@
             numOfRows: "1000",
             _type: "json"
           });
-          const url = `/api/proxy?${params.toString()}`;
+          const url = `${API_PROXY_BASE}/api/proxy?${params.toString()}`;
           const res = await fetch(url);
           if (!res.ok) {
             let detail = "";
