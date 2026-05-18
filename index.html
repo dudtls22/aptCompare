@@ -9,8 +9,8 @@
     :root {
       --bg: #f5f7fb;
       --card: #ffffff;
-      --text: #1f2937;
-      --muted: #6b7280;
+      --text: #111111;
+      --muted: #4b5563;
       --primary: #2563eb;
       --border: #d1d5db;
       --danger: #b91c1c;
@@ -41,7 +41,7 @@
     }
     p.desc {
       margin: 0;
-      color: var(--muted);
+      color: var(--text);
     }
     .grid {
       display: grid;
@@ -71,7 +71,7 @@
       gap: 12px;
     }
     .compare-card {
-      border-radius: 10px;
+      border-radius: 10px; 
       padding: 12px;
       border: 1px solid var(--border);
     }
@@ -115,13 +115,15 @@
     label {
       font-weight: 600;
       font-size: 14px;
+      color: var(--text);
     }
-    input, select, button {
+    input, select, option, button {
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 10px 12px;
       font-size: 14px;
       width: 100%;
+      color: var(--text);
     }
     button {
       background: var(--primary);
@@ -141,13 +143,13 @@
     #message {
       margin-top: 8px;
       font-size: 14px;
-      color: var(--muted);
+      color: var(--text);
       white-space: pre-wrap;
     }
     #message.error { color: var(--danger); }
     .hint {
       font-size: 13px;
-      color: var(--muted);
+      color: var(--text);
       margin-top: 8px;
       line-height: 1.5;
     }
@@ -171,7 +173,7 @@
       font-weight: 700;
     }
     .empty-row {
-      color: var(--muted);
+      color: var(--text);
     }
     .table-actions {
       display: flex;
@@ -301,7 +303,7 @@
     }
     .fav-empty {
       text-align: center;
-      color: var(--muted);
+      color: var(--text);
       padding: 28px 12px;
       font-size: 14px;
       line-height: 1.6;
@@ -323,7 +325,7 @@
       line-height: 1.45;
     }
     .fav-row-title { font-weight: 700; color: var(--text); }
-    .fav-row-meta { color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .fav-row-meta { color: var(--text); font-size: 12px; margin-top: 2px; }
     .btn-remove-fav {
       background: #fee2e2;
       color: var(--danger);
@@ -368,17 +370,16 @@
         <p class="section-title">공통 조회 조건</p>
         <div class="common-grid">
           <div class="field">
-            <label for="guSelect">서울 구</label>
+            <label for="regionSelect">시/도</label>
+            <select id="regionSelect"></select>
+          </div>
+          <div class="field">
+            <label for="guSelect" id="districtLabel">시군구</label>
             <select id="guSelect"></select>
           </div>
           <div class="field">
             <label for="months">조회 개월 수</label>
-            <select id="months">
-              <option value="6">6개월</option>
-              <option value="12" selected>12개월</option>
-              <option value="24">24개월</option>
-              <option value="36">36개월</option>
-            </select>
+            <select id="months"></select>
           </div>
         </div>
       </div>
@@ -450,12 +451,10 @@
 
       <div class="field full">
         <button id="loadBtn">차트 조회</button>
-        <div id="message">서울 구 선택 후 비교1~3의 동/아파트/평형을 설정하세요.</div>
+        <div id="message">지역 선택 후 비교1~3의 동/아파트/평형을 설정하세요.</div>
         <div class="hint">
-          - 비교1~3 각각 다른 동 선택이 가능합니다.<br />
           - 아파트를 선택하면 해당 아파트의 평형만 표시됩니다.<br />
-          - 브라우저에서 CORS 제한이 있을 수 있습니다. 그 경우 로컬 프록시/서버를 통해 호출해야 합니다.
-        </div>
+       </div>
       </div>
     </div>
 
@@ -506,10 +505,14 @@
   </div>
 
   <script>
-    const SERVICE_KEY = "f519fd4c95a7eefb13d61320f5bba983a37b307632b0570ffabab42b00992de0";
-    const ENDPOINTS = [
-      "https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev",
-      "https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade"
+    const API_PROXY_ROUTES = [
+      { path: "/api-proxy/trade-dev", label: "개발" },
+      { path: "/api-proxy/trade", label: "운영" }
+    ];
+    const REGION_OPTIONS = [
+      { code: "seoul", name: "서울특별시", districtLabel: "서울 구" },
+      { code: "incheon", name: "인천광역시", districtLabel: "구/군" },
+      { code: "gyeonggi", name: "경기도", districtLabel: "시군구" }
     ];
     const SEOUL_GU_OPTIONS = [
       { code: "11110", name: "종로구" }, { code: "11140", name: "중구" }, { code: "11170", name: "용산구" },
@@ -522,6 +525,31 @@
       { code: "11650", name: "서초구" }, { code: "11680", name: "강남구" }, { code: "11710", name: "송파구" },
       { code: "11740", name: "강동구" }
     ];
+    const GYEONGGI_SGG_OPTIONS = [
+      { code: "41111", name: "수원시 장안구" }, { code: "41113", name: "수원시 권선구" }, { code: "41115", name: "수원시 팔달구" }, { code: "41117", name: "수원시 영통구" },
+      { code: "41131", name: "성남시 수정구" }, { code: "41133", name: "성남시 중원구" }, { code: "41135", name: "성남시 분당구" },
+      { code: "41150", name: "의정부시" }, { code: "41171", name: "안양시 만안구" }, { code: "41173", name: "안양시 동안구" },
+      { code: "41190", name: "부천시" }, { code: "41210", name: "광명시" }, { code: "41220", name: "평택시" }, { code: "41250", name: "동두천시" },
+      { code: "41271", name: "안산시 상록구" }, { code: "41273", name: "안산시 단원구" },
+      { code: "41281", name: "고양시 덕양구" }, { code: "41285", name: "고양시 일산동구" }, { code: "41287", name: "고양시 일산서구" },
+      { code: "41290", name: "과천시" }, { code: "41310", name: "구리시" }, { code: "41360", name: "남양주시" }, { code: "41370", name: "오산시" },
+      { code: "41390", name: "시흥시" }, { code: "41410", name: "군포시" }, { code: "41430", name: "의왕시" }, { code: "41450", name: "하남시" },
+      { code: "41461", name: "용인시 처인구" }, { code: "41463", name: "용인시 기흥구" }, { code: "41465", name: "용인시 수지구" },
+      { code: "41480", name: "파주시" }, { code: "41500", name: "이천시" }, { code: "41550", name: "안성시" }, { code: "41570", name: "김포시" },
+      { code: "41590", name: "화성시" }, { code: "41610", name: "광주시" }, { code: "41630", name: "양주시" }, { code: "41650", name: "포천시" },
+      { code: "41670", name: "여주시" }, { code: "41800", name: "연천군" }, { code: "41820", name: "가평군" }, { code: "41830", name: "양평군" }
+    ];
+    const INCHEON_SGG_OPTIONS = [
+      { code: "28110", name: "중구" }, { code: "28140", name: "동구" }, { code: "28177", name: "미추홀구" },
+      { code: "28185", name: "연수구" }, { code: "28200", name: "남동구" }, { code: "28237", name: "부평구" },
+      { code: "28245", name: "계양구" }, { code: "28260", name: "서구" }, { code: "28710", name: "강화군" },
+      { code: "28720", name: "옹진군" }
+    ];
+    const DISTRICT_OPTIONS_BY_REGION = {
+      seoul: SEOUL_GU_OPTIONS,
+      incheon: INCHEON_SGG_OPTIONS,
+      gyeonggi: GYEONGGI_SGG_OPTIONS
+    };
     const SEOUL_DONGS_BY_GU = {
       "11110": ["청운동", "신교동", "궁정동", "효자동", "삼청동", "부암동", "평창동", "무악동", "사직동", "창신동"],
       "11140": ["소공동", "회현동", "명동", "필동", "장충동", "광희동", "을지로동", "신당동", "다산동", "약수동"],
@@ -549,8 +577,10 @@
       "11710": ["잠실동", "신천동", "풍납동", "송파동", "석촌동", "삼전동", "가락동", "문정동", "장지동", "위례동"],
       "11740": ["강일동", "상일동", "명일동", "고덕동", "암사동", "천호동", "성내동", "길동", "둔촌동"]
     };
+    const regionSelect = document.getElementById("regionSelect");
     const loadBtn = document.getElementById("loadBtn");
     const guSelect = document.getElementById("guSelect");
+    const districtLabel = document.getElementById("districtLabel");
     const monthsSelect = document.getElementById("months");
     const dealTableBody = document.getElementById("dealTableBody");
     const loadMoreBtn = document.getElementById("loadMoreBtn");
@@ -561,9 +591,11 @@
     const slotFavModalBody = document.getElementById("slotFavModalBody");
     const slotFavModalTitle = document.getElementById("slotFavModalTitle");
     const aptAreaCache = {};
+    const dongOptionsPromiseCache = {};
     const monthDataPromiseCache = {};
     const TABLE_PAGE_SIZE = 10;
     let slotFavTargetId = null;
+    let suppressGuSelectChange = false;
     let allDealPoints = [];
     let visibleDealCount = TABLE_PAGE_SIZE;
     let chart;
@@ -625,7 +657,35 @@
     }
 
     function getDongName(item) {
-      return String(item?.umdNm || item?.dong || item?.법정동 || "").trim();
+      return String(
+        item?.umdNm ??
+        item?.UMD_NM ??
+        item?.umd_nm ??
+        item?.dong ??
+        item?.DONG ??
+        item?.법정동 ??
+        ""
+      ).trim();
+    }
+
+    function setSelectValueProgrammatic(selectEl, value) {
+      if (!selectEl) return;
+      selectEl.dataset.programmatic = "1";
+      try {
+        selectEl.value = value == null ? "" : String(value);
+      } finally {
+        queueMicrotask(() => {
+          delete selectEl.dataset.programmatic;
+        });
+      }
+    }
+
+    function itemMatchesSelectedDong(item, dongName) {
+      if (!dongName) return true;
+      const itemDong = getDongName(item);
+      if (!itemDong) return false;
+      if (isSameDong(itemDong, dongName)) return true;
+      return normalizeDongName(itemDong) === normalizeDongName(dongName);
     }
 
     function getAptName(item) {
@@ -660,16 +720,72 @@
       return String(item?.floor || item?.층 || "").trim();
     }
 
-    function setupGuSelect() {
-      guSelect.innerHTML = SEOUL_GU_OPTIONS.map((gu) => (
-        `<option value="${gu.code}">${gu.name}</option>`
+    function sortStringsKoAsc(list) {
+      return [...list].map(String).sort((a, b) => a.localeCompare(b, "ko"));
+    }
+
+    function sortAreaM2Asc(list) {
+      return [...list].map(String).sort((a, b) => a.localeCompare(b, "ko", { numeric: true }));
+    }
+
+    function setupRegionSelect() {
+      regionSelect.innerHTML = REGION_OPTIONS.map((region) => (
+        `<option value="${region.code}">${region.name}</option>`
       )).join("");
-      guSelect.value = "11680";
+      regionSelect.value = "seoul";
+    }
+
+    function getDistrictOptions(regionCode = regionSelect.value) {
+      return Array.isArray(DISTRICT_OPTIONS_BY_REGION[regionCode])
+        ? DISTRICT_OPTIONS_BY_REGION[regionCode]
+        : [];
+    }
+
+    function findRegionCodeByLawdCd(lawdCd) {
+      const code = String(lawdCd || "");
+      return REGION_OPTIONS.find((region) => (
+        getDistrictOptions(region.code).some((district) => district.code === code)
+      ))?.code || "";
+    }
+
+    function getDistrictName(lawdCd) {
+      const code = String(lawdCd || "");
+      for (const region of REGION_OPTIONS) {
+        const district = getDistrictOptions(region.code).find((d) => d.code === code);
+        if (district) return district.name;
+      }
+      return "";
+    }
+
+    function setupDistrictSelect(regionCode = regionSelect.value, preferredCode = "") {
+      const region = REGION_OPTIONS.find((r) => r.code === regionCode) || REGION_OPTIONS[0];
+      const districts = getDistrictOptions(region.code);
+      const sorted = [...districts].sort((a, b) => a.name.localeCompare(b.name, "ko"));
+      districtLabel.textContent = region.districtLabel;
+      guSelect.innerHTML = sorted.map((district) => (
+        `<option value="${district.code}">${district.name}</option>`
+      )).join("");
+      const fallbackCode = region.code === "seoul" ? "11680" : (sorted[0]?.code || "");
+      guSelect.value = preferredCode && sorted.some((d) => d.code === preferredCode)
+        ? preferredCode
+        : fallbackCode;
+    }
+
+    function setupMonthsSelect() {
+      const items = [
+        { value: "6", label: "6개월" },
+        { value: "12", label: "12개월" },
+        { value: "24", label: "24개월" },
+        { value: "36", label: "36개월" }
+      ].sort((a, b) => a.label.localeCompare(b.label, "ko", { numeric: true }));
+      monthsSelect.innerHTML = items.map((it) => (
+        `<option value="${it.value}"${it.value === "12" ? " selected" : ""}>${it.label}</option>`
+      )).join("");
     }
 
     function renderDongOptions(selectEl, dongNames) {
       const options = ['<option value="">선택 안함</option>'];
-      for (const dong of dongNames) {
+      for (const dong of sortStringsKoAsc(dongNames)) {
         options.push(`<option value="${dong}">${dong}</option>`);
       }
       selectEl.innerHTML = options.join("");
@@ -678,7 +794,7 @@
 
     function renderAptOptions(selectEl, aptNames) {
       const options = ['<option value="">선택 안함</option>'];
-      for (const aptName of aptNames) {
+      for (const aptName of sortStringsKoAsc(aptNames)) {
         options.push(`<option value="${aptName}">${aptName}</option>`);
       }
       selectEl.innerHTML = options.join("");
@@ -687,7 +803,7 @@
 
     function renderAreaOptions(selectEl, areaValues) {
       const options = ['<option value="">전체</option>'];
-      for (const area of areaValues) {
+      for (const area of sortAreaM2Asc(areaValues)) {
         options.push(`<option value="${area}">${area}㎡</option>`);
       }
       selectEl.innerHTML = options.join("");
@@ -713,23 +829,29 @@
       return result;
     }
 
-    async function fetchOneMonth({ serviceKey, lawdCd, ymParam }) {
+    async function fetchOneMonth({ lawdCd, ymParam }) {
       let lastError;
 
-      for (const endpoint of ENDPOINTS) {
+      for (const route of API_PROXY_ROUTES) {
         try {
           const params = new URLSearchParams({
-            serviceKey,
             LAWD_CD: lawdCd,
             DEAL_YMD: ymParam,
             pageNo: "1",
             numOfRows: "1000",
             _type: "json"
           });
-          const url = `${endpoint}?${params.toString()}`;
+          const url = `${route.path}?${params.toString()}`;
           const res = await fetch(url);
           if (!res.ok) {
-            throw new Error(`HTTP ${res.status} (${endpoint.includes("TradeDev") ? "개발" : "운영"} 엔드포인트)`);
+            let detail = "";
+            try {
+              const errBody = await res.clone().json();
+              if (errBody?.message) detail = `: ${errBody.message}`;
+            } catch {
+              /* ignore */
+            }
+            throw new Error(`HTTP ${res.status} (${route.label} 프록시)${detail}`);
           }
 
           const data = await res.json();
@@ -738,7 +860,7 @@
           const isSuccess = resultCode === "00" || resultCode === "000";
           if (!isSuccess) {
             throw new Error(
-              `${header?.resultMsg || "API 오류"} (코드: ${resultCode || "N/A"}, ${endpoint.includes("TradeDev") ? "개발" : "운영"} 엔드포인트)`
+              `${header?.resultMsg || "API 오류"} (코드: ${resultCode || "N/A"}, ${route.label} 엔드포인트)`
             );
           }
           const items = data?.response?.body?.items?.item || [];
@@ -754,7 +876,7 @@
     function fetchOneMonthCached({ lawdCd, ymParam }) {
       const key = `${lawdCd}::${ymParam}`;
       if (!monthDataPromiseCache[key]) {
-        monthDataPromiseCache[key] = fetchOneMonth({ serviceKey: SERVICE_KEY, lawdCd, ymParam })
+        monthDataPromiseCache[key] = fetchOneMonth({ lawdCd, ymParam })
           .catch((err) => {
             delete monthDataPromiseCache[key];
             throw err;
@@ -767,7 +889,7 @@
       const points = [];
       for (const { ym, items } of monthlyRows) {
         for (const it of items) {
-          if (condition.dong && !isSameDong(getDongName(it), condition.dong)) continue;
+          if (condition.dong && !itemMatchesSelectedDong(it, condition.dong)) continue;
           if (condition.apt && getAptName(it) !== condition.apt) continue;
           if (condition.area) {
             const area = getAreaFloorValue(it);
@@ -798,13 +920,62 @@
       return points;
     }
 
-    function loadDongOptionsByGu(lawdCd) {
-      const fixedDongs = Array.isArray(SEOUL_DONGS_BY_GU[lawdCd]) ? SEOUL_DONGS_BY_GU[lawdCd] : [];
+    function getStaticDongOptions(lawdCd) {
+      return Array.isArray(SEOUL_DONGS_BY_GU[lawdCd]) ? SEOUL_DONGS_BY_GU[lawdCd] : [];
+    }
+
+    function renderDongLoading(text = "동 목록 불러오는 중...") {
       slots.forEach((slot) => {
-        renderDongOptions(slot.dongEl, fixedDongs);
+        slot.dongEl.innerHTML = `<option value="">${text}</option>`;
+        slot.dongEl.disabled = true;
         renderAptOptions(slot.aptEl, []);
         renderAreaPlaceholder(slot.areaEl, "아파트를 먼저 선택하세요");
       });
+    }
+
+    async function getDongOptionsByDistrict(lawdCd) {
+      const fixedDongs = getStaticDongOptions(lawdCd);
+      if (fixedDongs.length) return fixedDongs;
+
+      const key = String(lawdCd || "");
+      if (!dongOptionsPromiseCache[key]) {
+        dongOptionsPromiseCache[key] = (async () => {
+          const targetMonths = buildTargetMonths(24);
+          const monthResults = await Promise.allSettled(
+            targetMonths.map((m) => fetchOneMonthCached({ lawdCd, ymParam: m.ymParam }))
+          );
+          const fulfilled = monthResults.filter((r) => r.status === "fulfilled");
+          if (!fulfilled.length) {
+            const rej = monthResults.find((r) => r.status === "rejected");
+            const msg = rej?.reason?.message || String(rej?.reason || "") || "동 목록 API 호출이 모두 실패했습니다.";
+            throw new Error(msg);
+          }
+
+          const dongSet = new Set();
+          for (const result of fulfilled) {
+            for (const item of result.value) {
+              const dongName = getDongName(item);
+              if (dongName) dongSet.add(dongName);
+            }
+          }
+          return sortStringsKoAsc(Array.from(dongSet));
+        })().catch((err) => {
+          delete dongOptionsPromiseCache[key];
+          throw err;
+        });
+      }
+      return dongOptionsPromiseCache[key];
+    }
+
+    async function loadDongOptionsByDistrict(lawdCd) {
+      renderDongLoading();
+      const dongNames = await getDongOptionsByDistrict(lawdCd);
+      slots.forEach((slot) => {
+        renderDongOptions(slot.dongEl, dongNames);
+        renderAptOptions(slot.aptEl, []);
+        renderAreaPlaceholder(slot.areaEl, "아파트를 먼저 선택하세요");
+      });
+      return dongNames;
     }
 
     async function loadAptAreaOptions({ lawdCd, dongName }) {
@@ -819,11 +990,17 @@
       const monthResults = await Promise.allSettled(
         targetMonths.map((m) => fetchOneMonthCached({ lawdCd, ymParam: m.ymParam }))
       );
+      const fulfilled = monthResults.filter((r) => r.status === "fulfilled");
+      if (fulfilled.length === 0) {
+        const rej = monthResults.find((r) => r.status === "rejected");
+        const msg = rej?.reason?.message || String(rej?.reason || "") || "월별 API 호출이 모두 실패했습니다.";
+        throw new Error(msg);
+      }
       for (const result of monthResults) {
         if (result.status !== "fulfilled") continue;
         const items = result.value;
         for (const item of items) {
-          if (!isSameDong(getDongName(item), dongName)) continue;
+          if (!itemMatchesSelectedDong(item, dongName)) continue;
           const aptName = getAptName(item);
           if (!aptName) continue;
           aptSet.add(aptName);
@@ -833,10 +1010,10 @@
         }
       }
 
-      const aptNames = Array.from(aptSet).sort((a, b) => a.localeCompare(b, "ko"));
+      const aptNames = sortStringsKoAsc(Array.from(aptSet));
       const areaByApt = {};
       for (const aptName of aptNames) {
-        areaByApt[aptName] = Array.from(areaByAptSet[aptName] || []).sort((a, b) => Number(a) - Number(b));
+        areaByApt[aptName] = sortAreaM2Asc(Array.from(areaByAptSet[aptName] || []));
       }
       aptAreaCache[key] = { aptNames, areaByApt };
       return aptAreaCache[key];
@@ -847,7 +1024,7 @@
       const datasets = conditions.map((condition) => {
         const data = monthlyRows.map(({ items }) => {
           const prices = items
-            .filter((it) => !condition.dong || isSameDong(getDongName(it), condition.dong))
+            .filter((it) => !condition.dong || itemMatchesSelectedDong(it, condition.dong))
             .filter((it) => getAptName(it) === condition.apt)
             .filter((it) => {
               if (!condition.area) return true;
@@ -982,61 +1159,142 @@
         .replaceAll('"', "&quot;");
     }
 
+    function getAreaListForApt(data, attemptedAptName) {
+      const m = data?.areaByApt;
+      if (!m || !attemptedAptName) return [];
+      const v = String(attemptedAptName).trim();
+      if (Array.isArray(m[v]) && m[v].length) return m[v];
+      const vn = normalizeDongName(v);
+      const key = Object.keys(m).find((k) => {
+        const kt = String(k).trim();
+        return kt === v || normalizeDongName(k) === vn;
+      });
+      return key && Array.isArray(m[key]) ? m[key] : [];
+    }
+
     function pickAreaForSlot(areas, fav) {
       const list = Array.isArray(areas) ? areas.map(String) : [];
-      const saved = String(fav?.area || "").trim();
-      if (saved && list.includes(saved)) {
-        return saved;
+      const savedRaw = String(fav?.area || "").trim();
+      if (!savedRaw) {
+        return list.length === 1 ? list[0] : "";
       }
-      if (saved) {
-        const n = Math.floor(Number.parseFloat(saved));
-        if (Number.isFinite(n) && list.includes(String(n))) {
-          return String(n);
+      if (list.includes(savedRaw)) return savedRaw;
+      const nf = Math.floor(Number.parseFloat(savedRaw));
+      if (Number.isFinite(nf)) {
+        const byFloor = list.find((x) => Math.floor(Number.parseFloat(String(x))) === nf);
+        if (byFloor != null) return String(byFloor);
+      }
+      const savedNum = Number.parseFloat(savedRaw);
+      if (Number.isFinite(savedNum)) {
+        const close = list.find((x) => Math.abs(Number.parseFloat(String(x)) - savedNum) < 0.51);
+        if (close != null) return String(close);
+      }
+      if (list.length === 1) return list[0];
+      return "";
+    }
+
+    function setSelectValueIfExists(selectEl, value) {
+      const want = String(value ?? "").trim();
+      if (!want) {
+        selectEl.value = "";
+        return;
+      }
+      const opts = [...selectEl.options].filter((o) => o.value !== "");
+      if (opts.some((o) => o.value === want)) {
+        selectEl.value = want;
+        return;
+      }
+      const wf = Math.floor(Number.parseFloat(want));
+      if (Number.isFinite(wf)) {
+        const hit = opts.find((o) => Math.floor(Number.parseFloat(o.value)) === wf);
+        if (hit) {
+          selectEl.value = hit.value;
+          return;
         }
       }
-      if (list.length === 1) {
-        return list[0];
-      }
-      return "";
+      selectEl.value = "";
+    }
+
+    function resolvePickToDongOption(rawDong, fixedDongs) {
+      const d = String(rawDong || "").trim();
+      if (!d) return "";
+      if (fixedDongs.includes(d)) return d;
+      const key = normalizeDongName(d);
+      const found = fixedDongs.find((x) => normalizeDongName(x) === key);
+      return found || d;
+    }
+
+    function resolvePickToAptOption(rawApt, aptNames) {
+      const a = String(rawApt || "").trim();
+      if (!a) return "";
+      const list = aptNames.map((x) => String(x));
+      if (list.includes(a)) return a;
+      const hit = list.find((x) => x.trim() === a || normalizeDongName(x) === normalizeDongName(a));
+      return hit || a;
     }
 
     async function applyFavoriteToSlot(slotId, fav) {
       const slot = slots.find((s) => s.id === slotId);
       if (!slot) return;
-      const targetLawdCd = String(fav.lawdCd || "").trim() || guSelect.value;
-      const fixedDongs = Array.isArray(SEOUL_DONGS_BY_GU[targetLawdCd]) ? SEOUL_DONGS_BY_GU[targetLawdCd] : [];
-
-      if (targetLawdCd !== guSelect.value) {
-        guSelect.value = targetLawdCd;
-        loadDongOptionsByGu(targetLawdCd);
-      } else {
-        renderDongOptions(slot.dongEl, fixedDongs);
-      }
-
-      if (fav.dong && !fixedDongs.includes(fav.dong)) {
-        const opt = document.createElement("option");
-        opt.value = fav.dong;
-        opt.textContent = fav.dong;
-        slot.dongEl.appendChild(opt);
-      }
-      slot.dongEl.value = fav.dong || "";
+      suppressGuSelectChange = true;
       slot.aptEl.disabled = true;
-      slot.aptEl.innerHTML = '<option value="">불러오는 중...</option>';
-      renderAreaPlaceholder(slot.areaEl, "아파트를 먼저 선택하세요");
       try {
-        const data = await loadAptAreaOptions({ lawdCd: targetLawdCd, dongName: fav.dong });
-        renderAptOptions(slot.aptEl, data.aptNames);
-        const aptPick = String(fav.apt || "").trim();
-        if (aptPick && data.aptNames.includes(aptPick)) {
-          slot.aptEl.value = aptPick;
-        } else {
-          slot.aptEl.value = "";
+        const targetLawdCd = String(fav.lawdCd || "").trim() || guSelect.value;
+        const targetRegionCode = findRegionCodeByLawdCd(targetLawdCd) || regionSelect.value;
+
+        const didDistrictChange = targetLawdCd !== guSelect.value;
+        if (targetRegionCode !== regionSelect.value) {
+          regionSelect.value = targetRegionCode;
+          setupDistrictSelect(targetRegionCode, targetLawdCd);
         }
+        if (didDistrictChange) {
+          guSelect.value = targetLawdCd;
+        }
+
+        const dongOptions = await getDongOptionsByDistrict(targetLawdCd);
+        if (didDistrictChange) {
+          slots.forEach((s) => {
+            renderDongOptions(s.dongEl, dongOptions);
+            renderAptOptions(s.aptEl, []);
+            renderAreaPlaceholder(s.areaEl, "아파트를 먼저 선택하세요");
+          });
+        } else {
+          renderDongOptions(slot.dongEl, dongOptions);
+        }
+        const resolvedDong = resolvePickToDongOption(fav.dong, dongOptions);
+        if (resolvedDong && ![...slot.dongEl.options].some((o) => o.value === resolvedDong)) {
+          const opt = document.createElement("option");
+          opt.value = resolvedDong;
+          opt.textContent = resolvedDong;
+          slot.dongEl.appendChild(opt);
+        }
+        setSelectValueProgrammatic(slot.dongEl, resolvedDong || "");
+
+        slot.aptEl.innerHTML = '<option value="">불러오는 중...</option>';
+        renderAreaPlaceholder(slot.areaEl, "아파트를 먼저 선택하세요");
+
+        const data = await loadAptAreaOptions({ lawdCd: targetLawdCd, dongName: resolvedDong });
+        renderAptOptions(slot.aptEl, data.aptNames);
+        const aptWant = String(fav.apt || "").trim();
+        const resolvedApt = resolvePickToAptOption(aptWant, data.aptNames);
+        if (resolvedApt) {
+          if (![...slot.aptEl.options].some((o) => o.value === resolvedApt)) {
+            const oa = document.createElement("option");
+            oa.value = resolvedApt;
+            oa.textContent = resolvedApt;
+            slot.aptEl.appendChild(oa);
+          }
+          setSelectValueProgrammatic(slot.aptEl, resolvedApt);
+        } else {
+          setSelectValueProgrammatic(slot.aptEl, "");
+        }
+
         const aptName = slot.aptEl.value.trim();
         if (aptName) {
-          const areas = Array.isArray(data.areaByApt?.[aptName]) ? data.areaByApt[aptName] : [];
+          const areas = getAreaListForApt(data, aptName);
           renderAreaOptions(slot.areaEl, areas);
-          slot.areaEl.value = pickAreaForSlot(areas, fav);
+          const picked = pickAreaForSlot(areas, fav);
+          setSelectValueIfExists(slot.areaEl, picked);
         } else {
           renderAreaPlaceholder(slot.areaEl, "아파트를 먼저 선택하세요");
         }
@@ -1044,6 +1302,7 @@
         setMessage(`즐겨찾기 적용 실패(비교${slotId}): ${err.message}`, true);
       } finally {
         slot.aptEl.disabled = false;
+        suppressGuSelectChange = false;
       }
     }
 
@@ -1185,7 +1444,7 @@
         .filter(Boolean);
 
       if (!lawdCd) {
-        setMessage("서울 구를 선택해주세요.", true);
+        setMessage("지역의 시군구를 선택해주세요.", true);
         return;
       }
       if (conditions.length === 0) {
@@ -1213,7 +1472,7 @@
         renderDealTable();
 
         const totalDeals = points.length;
-        const guNameResolved = guSelect.options[guSelect.selectedIndex]?.text || "선택 구";
+        const guNameResolved = getCurrentGuName() || "선택 지역";
         const selectedLabels = conditions.map((c) => c.label).join(" | ");
         setMessage(`${guNameResolved} / ${selectedLabels} 완료: ${months}개월 조회, 총 거래 ${totalDeals.toLocaleString("ko-KR")}건`);
       } catch (err) {
@@ -1222,8 +1481,8 @@
           `조회 실패: ${err.message}\n` +
           (
             isUnauthorized
-              ? "401 인증 오류: 1) 해당 API 활용신청/승인 여부 2) 서비스키(일반/디코딩) 3) 계정의 호출 권한을 확인해주세요."
-              : "서비스키(Decoding) 확인 및 CORS/네트워크 환경을 점검해주세요."
+              ? "401 인증 오류: 1) 해당 API 활용신청/승인 여부 2) .env 의 DATA_GO_KR_SERVICE_KEY(일반/디코딩) 3) 계정의 호출 권한을 확인해주세요."
+              : "로컬에서는 `npm start` 로 서버 실행 후 접속했는지, .env 키 설정·네트워크를 점검해주세요."
           ),
           true
         );
@@ -1237,6 +1496,7 @@
 
     function bindSlotEvents(slot) {
       slot.dongEl.addEventListener("change", async () => {
+        if (slot.dongEl.dataset.programmatic === "1") return;
         const lawdCd = guSelect.value;
         const dongName = slot.dongEl.value.trim();
         if (!dongName) {
@@ -1253,10 +1513,13 @@
         } catch (err) {
           renderAptOptions(slot.aptEl, []);
           setMessage(`비교${slot.id} 아파트 목록 조회 실패: ${err.message}`, true);
+        } finally {
+          slot.aptEl.disabled = false;
         }
       });
 
       slot.aptEl.addEventListener("change", async () => {
+        if (slot.aptEl.dataset.programmatic === "1") return;
         const lawdCd = guSelect.value;
         const dongName = slot.dongEl.value.trim();
         const aptName = slot.aptEl.value.trim();
@@ -1269,14 +1532,31 @@
         if (!data) {
           data = await loadAptAreaOptions({ lawdCd, dongName });
         }
-        const areas = Array.isArray(data.areaByApt?.[aptName]) ? data.areaByApt[aptName] : [];
+        const areas = getAreaListForApt(data, aptName);
         renderAreaOptions(slot.areaEl, areas);
       });
     }
 
-    guSelect.addEventListener("change", () => {
-      loadDongOptionsByGu(guSelect.value);
-      setMessage("비교1~3 동 목록을 불러왔습니다.");
+    regionSelect.addEventListener("change", async () => {
+      setupDistrictSelect(regionSelect.value);
+      try {
+        await loadDongOptionsByDistrict(guSelect.value);
+        setMessage("시군구와 동 목록을 불러왔습니다.");
+      } catch (err) {
+        renderDongLoading("동 목록을 불러오지 못했습니다");
+        setMessage(`동 목록 조회 실패: ${err.message}`, true);
+      }
+    });
+
+    guSelect.addEventListener("change", async () => {
+      if (suppressGuSelectChange) return;
+      try {
+        await loadDongOptionsByDistrict(guSelect.value);
+        setMessage("비교1~3 동 목록을 불러왔습니다.");
+      } catch (err) {
+        renderDongLoading("동 목록을 불러오지 못했습니다");
+        setMessage(`동 목록 조회 실패: ${err.message}`, true);
+      }
     });
 
     favoritesModalBody.addEventListener("click", (e) => {
@@ -1331,7 +1611,7 @@
       const apt = decodeURIComponent(b.getAttribute("data-apt") || "");
       const area = decodeURIComponent(b.getAttribute("data-area") || "").trim();
       const guName =
-        SEOUL_GU_OPTIONS.find((g) => g.code === String(lawdCd))?.name || getCurrentGuName();
+        getDistrictName(lawdCd) || getCurrentGuName();
       toggleFavorite({
         lawdCd,
         guName,
@@ -1393,8 +1673,13 @@
       }
     });
 
-    setupGuSelect();
-    loadDongOptionsByGu(guSelect.value);
+    setupRegionSelect();
+    setupDistrictSelect(regionSelect.value);
+    setupMonthsSelect();
+    loadDongOptionsByDistrict(guSelect.value).catch((err) => {
+      renderDongLoading("동 목록을 불러오지 못했습니다");
+      setMessage(`동 목록 조회 실패: ${err.message}`, true);
+    });
     slots.forEach(bindSlotEvents);
     loadMoreBtn.addEventListener("click", () => {
       visibleDealCount += TABLE_PAGE_SIZE;
