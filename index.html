@@ -349,6 +349,140 @@
       .grid { grid-template-columns: 1fr; }
       .common-grid { grid-template-columns: 1fr; }
     }
+    @media (max-width: 640px) {
+      body { background: #fff; }
+      .container {
+        margin: 0 auto;
+        padding: 10px;
+      }
+      .card {
+        padding: 12px;
+        margin-bottom: 10px;
+        border-radius: 10px;
+        box-shadow: none;
+      }
+      h1 {
+        font-size: 20px;
+        line-height: 1.25;
+      }
+      p.desc,
+      .hint,
+      #message {
+        font-size: 13px;
+        line-height: 1.45;
+      }
+      input, select, option, button {
+        min-height: 44px;
+        font-size: 16px;
+      }
+      .page-header,
+      .header-actions,
+      .btn-secondary {
+        width: 100%;
+      }
+      .common-section,
+      .compare-card {
+        padding: 10px;
+      }
+      .compare-card-head {
+        align-items: flex-start;
+      }
+      .compare-card-head .btn-link {
+        font-size: 14px;
+        padding: 2px 0;
+      }
+      #priceChart {
+        min-height: 260px;
+      }
+      .table-wrap {
+        overflow-x: visible;
+      }
+      table,
+      thead,
+      tbody,
+      tr,
+      th,
+      td {
+        display: block;
+      }
+      thead {
+        display: none;
+      }
+      tbody tr {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 8px 10px;
+        margin-bottom: 10px;
+        background: #fff;
+      }
+      tbody tr.empty-row {
+        padding: 16px;
+        text-align: center;
+      }
+      td {
+        border-bottom: 1px solid #edf0f3;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 9px 0;
+        white-space: normal;
+        word-break: keep-all;
+        text-align: right;
+      }
+      td:last-child {
+        border-bottom: none;
+      }
+      td::before {
+        content: attr(data-label);
+        flex: 0 0 86px;
+        color: #374151;
+        font-weight: 800;
+        text-align: left;
+      }
+      td[data-label="즐겨찾기"] {
+        justify-content: flex-start;
+        align-items: center;
+      }
+      td[data-label="즐겨찾기"]::before {
+        flex: 0 0 86px;
+      }
+      .compare-tag {
+        white-space: normal;
+        text-align: left;
+        line-height: 1.35;
+      }
+      #loadMoreBtn {
+        width: 100%;
+        min-height: 44px;
+      }
+      .modal-overlay {
+        padding: 8px;
+        align-items: flex-end;
+      }
+      .modal-panel {
+        max-height: 88vh;
+        border-radius: 14px 14px 0 0;
+      }
+      .modal-head,
+      .modal-body {
+        padding-left: 12px;
+        padding-right: 12px;
+      }
+    }
+    @media (max-width: 420px) {
+      .container { padding: 8px; }
+      .card { padding: 10px; }
+      h1 { font-size: 18px; }
+      .section-title { font-size: 14px; }
+      td::before,
+      td[data-label="즐겨찾기"]::before {
+        flex-basis: 74px;
+      }
+      .fav-row {
+        align-items: flex-start;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1407,13 +1541,13 @@
         const areaEnc = encodeURIComponent(areaStr);
         return (
           `<tr>
-          <td><button type="button" class="${starClass}" data-fav-star="1" data-lawd="${lawdCd}" data-dong="${dongEnc}" data-apt="${aptEnc}" data-area="${areaEnc}" title="즐겨찾기">${starChar}</button></td>
-          <td>${p.dateLabel}</td>
-          <td><span class="compare-tag" style="color:${p.lineColor}; border-color:${p.lineColor}; background:${p.lineColor}22;">${p.lineLabel}</span></td>
-          <td>${p.dongName}</td>
-          <td>${formatKrw(p.price)}</td>
-          <td>${p.floor}</td>
-          <td>${p.hoName}</td>
+          <td data-label="즐겨찾기"><button type="button" class="${starClass}" data-fav-star="1" data-lawd="${lawdCd}" data-dong="${dongEnc}" data-apt="${aptEnc}" data-area="${areaEnc}" title="즐겨찾기">${starChar}</button></td>
+          <td data-label="거래일">${p.dateLabel}</td>
+          <td data-label="비교조건"><span class="compare-tag" style="color:${p.lineColor}; border-color:${p.lineColor}; background:${p.lineColor}22;">${p.lineLabel}</span></td>
+          <td data-label="동">${p.dongName}</td>
+          <td data-label="실거래가">${formatKrw(p.price)}</td>
+          <td data-label="층">${p.floor}</td>
+          <td data-label="호수">${p.hoName}</td>
         </tr>`
         );
       }).join("");
