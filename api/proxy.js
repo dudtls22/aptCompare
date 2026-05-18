@@ -3,7 +3,20 @@ const UPSTREAM_BY_TARGET = {
   trade: "https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade"
 };
 
+function setCorsHeaders(res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+}
+
 export default async function handler(req, res) {
+  setCorsHeaders(res);
+
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
   const serviceKey = (process.env.DATA_GO_KR_SERVICE_KEY || "").trim();
 
   if (!serviceKey) {
