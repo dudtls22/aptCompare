@@ -696,9 +696,16 @@
       { target: "trade", label: "운영" }
     ];
     const VERCEL_API_PROXY_BASE = "https://apt-compare-beta.vercel.app";
-    const API_PROXY_BASE = ["localhost", "127.0.0.1"].includes(window.location.hostname)
-      ? ""
-      : VERCEL_API_PROXY_BASE;
+
+    function getApiProxyBase() {
+      const host = window.location.hostname;
+      if (host === "localhost" || host === "127.0.0.1") return "";
+      if (host.endsWith(".vercel.app")) return "";
+      if (window.location.protocol === "file:") return VERCEL_API_PROXY_BASE;
+      return VERCEL_API_PROXY_BASE;
+    }
+
+    const API_PROXY_BASE = getApiProxyBase();
     const REGION_OPTIONS = [
       { code: "seoul", name: "서울특별시", districtLabel: "서울 구" },
       { code: "incheon", name: "인천광역시", districtLabel: "구/군" },
@@ -1384,7 +1391,9 @@
 
     async function refreshMarketTicker() {
       try {
-        const res = await fetch(`${API_PROXY_BASE}/api/market`);
+        const res = await fetch(`${API_PROXY_BASE}/api/market`, {
+          signal: AbortSignal.timeout(15000)
+        });
         const data = await res.json();
         if (!res.ok) {
           throw new Error(data?.message || `HTTP ${res.status}`);
@@ -1410,8 +1419,12 @@
           kbTickerEl.innerHTML = `<strong>KB금융</strong> <span class="muted">조회 실패</span>`;
         }
       } catch (err) {
-        fxTickerEl.innerHTML = `<strong>USD/KRW</strong> <span class="muted">${escapeHtml(err.message)}</span>`;
-        kbTickerEl.innerHTML = `<strong>KB금융</strong> <span class="muted">—</span>`;
+        const msg = escapeHtml(err.message || "연결 실패");
+        const apiHint = API_PROXY_BASE
+          ? ` <span class="muted">(API: ${escapeHtml(API_PROXY_BASE)})</span>`
+          : "";
+        fxTickerEl.innerHTML = `<strong>USD/KRW</strong> <span class="muted">${msg}</span>${apiHint}`;
+        kbTickerEl.innerHTML = `<strong>KB금융</strong> <span class="muted">API 확인 필요</span>`;
       }
     }
 

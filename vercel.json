@@ -1,4 +1,10 @@
 {
+  "outputDirectory": ".",
+  "functions": {
+    "api/**/*.js": {
+      "includeFiles": "lib/**"
+    }
+  },
   "crons": [
     {
       "path": "/api/cron/daily-notify",
