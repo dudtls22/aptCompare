@@ -208,6 +208,50 @@
       gap: 8px;
       flex-shrink: 0;
     }
+    .market-ticker {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 20px;
+      margin-top: 12px;
+      padding: 10px 12px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .market-ticker-item {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .market-ticker-item strong { font-weight: 700; }
+    .market-ticker-item .up { color: #b91c1c; font-weight: 600; }
+    .market-ticker-item .down { color: #1d4ed8; font-weight: 600; }
+    .market-ticker-item .muted { color: var(--muted); font-size: 12px; }
+    .notify-btn {
+      background: transparent;
+      border: none;
+      margin: 0;
+      padding: 2px 6px;
+      width: auto;
+      font-size: 17px;
+      line-height: 1;
+      cursor: pointer;
+      opacity: 0.35;
+      filter: grayscale(1);
+    }
+    .notify-btn.on {
+      opacity: 1;
+      filter: none;
+    }
+    .notify-btn:hover { opacity: 0.75; }
+    .notify-btn.on:hover { opacity: 1; }
+    .notify-hint {
+      margin: 0 0 12px;
+      font-size: 12px;
+      line-height: 1.5;
+    }
     .btn-secondary {
       background: #fff;
       color: var(--primary);
@@ -492,6 +536,14 @@
         <div class="page-header-text">
           <h1>아파트 실거래가 월별 시세 변동</h1>
           <p class="desc">공공데이터포털(국토교통부 아파트 매매 실거래자료) API 기반 월별 평균 거래금액 차트</p>
+          <div id="marketTicker" class="market-ticker" aria-live="polite">
+            <span class="market-ticker-item" id="fxTicker">
+              <strong>USD/KRW</strong> <span class="muted">불러오는 중…</span>
+            </span>
+            <span class="market-ticker-item" id="kbTicker">
+              <strong>KB금융</strong> <span class="muted">불러오는 중…</span>
+            </span>
+          </div>
         </div>
         <div class="header-actions">
           <button type="button" class="btn-secondary" id="openFavoritesBtn">즐겨찾기 보기</button>
@@ -1236,7 +1288,8 @@
           guName: String(e?.guName ?? "").trim(),
           dong: String(e?.dong ?? "").trim(),
           apt: String(e?.apt ?? "").trim(),
-          area: e?.area != null && String(e.area).trim() !== "" ? String(e.area).trim() : ""
+          area: e?.area != null && String(e.area).trim() !== "" ? String(e.area).trim() : "",
+          notify: Boolean(e?.notify)
         }));
       } catch {
         return [];
@@ -1276,7 +1329,8 @@
           guName: String(entry.guName || "").trim(),
           dong: String(entry.dong || "").trim(),
           apt: String(entry.apt || "").trim(),
-          area: entry.area != null && String(entry.area).trim() !== "" ? String(entry.area).trim() : ""
+          area: entry.area != null && String(entry.area).trim() !== "" ? String(entry.area).trim() : "",
+          notify: Boolean(entry.notify)
         });
       }
       writeFavorites(list);
@@ -1284,6 +1338,81 @@
 
     function removeFavoriteByKey(key) {
       writeFavorites(readFavorites().filter((e) => favoriteKey(e) !== key));
+      syncNotifySubscriptions().catch(() => {});
+    }
+
+    function setFavoriteNotify(key, enabled) {
+      const list = readFavorites();
+      const idx = list.findIndex((e) => favoriteKey(e) === key);
+      if (idx < 0) return;
+      list[idx].notify = Boolean(enabled);
+      writeFavorites(list);
+      syncNotifySubscriptions().catch(() => {});
+    }
+
+    async function syncNotifySubscriptions() {
+      const subs = readFavorites().filter((f) => f.notify);
+      try {
+        const res = await fetch(`${API_PROXY_BASE}/api/notifications`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ subscriptions: subs })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data?.message || `HTTP ${res.status}`);
+        }
+        if (data?.store?.warning) {
+          console.warn("[notify sync]", data.store.warning);
+        }
+        return data;
+      } catch (err) {
+        console.warn("[notify sync failed]", err.message);
+        throw err;
+      }
+    }
+
+    const fxTickerEl = document.getElementById("fxTicker");
+    const kbTickerEl = document.getElementById("kbTicker");
+    const MARKET_REFRESH_MS = 60_000;
+
+    function formatPct(n) {
+      if (n == null || !Number.isFinite(n)) return "";
+      const sign = n > 0 ? "+" : "";
+      return `${sign}${n.toFixed(2)}%`;
+    }
+
+    async function refreshMarketTicker() {
+      try {
+        const res = await fetch(`${API_PROXY_BASE}/api/market`);
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data?.message || `HTTP ${res.status}`);
+        }
+        if (data?.fx?.rate != null) {
+          const rate = Number(data.fx.rate);
+          fxTickerEl.innerHTML =
+            `<strong>USD/KRW</strong> ${rate.toLocaleString("ko-KR", { maximumFractionDigits: 2 })}원` +
+            (data.fx.date ? ` <span class="muted">${data.fx.date}</span>` : "");
+        } else {
+          fxTickerEl.innerHTML = `<strong>USD/KRW</strong> <span class="muted">조회 실패</span>`;
+        }
+        if (data?.kb?.price != null) {
+          const price = Number(data.kb.price);
+          const ch = data.kb.changePercent;
+          const chClass = ch > 0 ? "up" : ch < 0 ? "down" : "muted";
+          const chHtml = ch != null && Number.isFinite(ch)
+            ? ` <span class="${chClass}">${formatPct(ch)}</span>`
+            : "";
+          kbTickerEl.innerHTML =
+            `<strong>KB금융</strong> ${price.toLocaleString("ko-KR")}원${chHtml}`;
+        } else {
+          kbTickerEl.innerHTML = `<strong>KB금융</strong> <span class="muted">조회 실패</span>`;
+        }
+      } catch (err) {
+        fxTickerEl.innerHTML = `<strong>USD/KRW</strong> <span class="muted">${escapeHtml(err.message)}</span>`;
+        kbTickerEl.innerHTML = `<strong>KB금융</strong> <span class="muted">—</span>`;
+      }
     }
 
     function getCurrentGuName() {
@@ -1447,20 +1576,26 @@
 
     function renderManageFavoritesModal() {
       const list = readFavorites().slice().sort((a, b) => favoriteKey(a).localeCompare(favoriteKey(b)));
+      const hint =
+        '<p class="hint notify-hint">🔔 알림: 매일 오전 9시 30분(한국시간) 당일 실거래가가 있으면 카카오톡으로 전송합니다. Vercel에 KAKAO_ACCESS_TOKEN·UPSTASH_REDIS 설정 후 알림을 켜 주세요.</p>';
       if (!list.length) {
-        favoritesModalBody.innerHTML = '<p class="fav-empty">즐겨찾기된 아파트가 없습니다.</p>';
+        favoritesModalBody.innerHTML = hint + '<p class="fav-empty">즐겨찾기된 아파트가 없습니다.</p>';
         return;
       }
-      favoritesModalBody.innerHTML = list.map((f) => {
+      favoritesModalBody.innerHTML = hint + list.map((f) => {
         const k = favoriteKey(f);
         const kEnc = encodeURIComponent(k);
         const title = escapeHtml(f.apt || "-");
         const meta = escapeHtml(
           `${f.guName || ""} · ${f.dong || ""}${f.area ? ` · ${f.area}㎡` : " · 평형 전체"}`
         );
+        const notifyOn = Boolean(f.notify);
+        const notifyClass = notifyOn ? "notify-btn on" : "notify-btn";
+        const notifyTitle = notifyOn ? "알림 켜짐 (매일 9:30 카카오)" : "알림 끔 — 클릭하여 켜기";
         return (
           `<div class="fav-row">
           <button type="button" class="star-btn filled" data-fav-modal-toggle="${kEnc}" title="즐겨찾기 해제">★</button>
+          <button type="button" class="${notifyClass}" data-fav-notify="${kEnc}" data-notify-on="${notifyOn ? "1" : "0"}" title="${notifyTitle}" aria-label="알림">${notifyOn ? "🔔" : "🔕"}</button>
           <div class="fav-row-main">
             <div class="fav-row-title">${title}</div>
             <div class="fav-row-meta">${meta}</div>
@@ -1698,7 +1833,28 @@
       }
     });
 
-    favoritesModalBody.addEventListener("click", (e) => {
+    favoritesModalBody.addEventListener("click", async (e) => {
+      const notifyBtn = e.target.closest("[data-fav-notify]");
+      if (notifyBtn) {
+        e.stopPropagation();
+        const k = decodeURIComponent(notifyBtn.getAttribute("data-fav-notify") || "");
+        const turningOn = notifyBtn.getAttribute("data-notify-on") !== "1";
+        setFavoriteNotify(k, turningOn);
+        renderManageFavoritesModal();
+        try {
+          const data = await syncNotifySubscriptions();
+          if (turningOn && data?.store?.warning) {
+            setMessage(data.store.warning, true);
+          } else if (turningOn) {
+            setMessage("알림이 켜졌습니다. 매일 9:30에 당일 실거래가를 카카오톡으로 보냅니다.");
+          } else {
+            setMessage("알림이 꺼졌습니다.");
+          }
+        } catch (err) {
+          setMessage(`알림 서버 동기화 실패: ${err.message}`, true);
+        }
+        return;
+      }
       const rm = e.target.closest("[data-fav-remove]");
       if (rm) {
         removeFavoriteByKey(decodeURIComponent(rm.getAttribute("data-fav-remove") || ""));
@@ -1811,6 +1967,9 @@
         slotFavModal.setAttribute("aria-hidden", "true");
       }
     });
+
+    refreshMarketTicker();
+    setInterval(refreshMarketTicker, MARKET_REFRESH_MS);
 
     setupRegionSelect();
     setupDistrictSelect(regionSelect.value);
