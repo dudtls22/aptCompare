@@ -1,5 +1,14 @@
 {
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/api/serve-page"
+    }
+  ],
   "functions": {
+    "api/serve-page.js": {
+      "includeFiles": "index.html"
+    },
     "api/**/*.js": {
       "includeFiles": "lib/**"
     }
