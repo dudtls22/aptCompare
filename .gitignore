@@ -12,3 +12,7 @@ Desktop.ini
 
 # 로컬 즐겨찾기 폴백 (Upstash 미설정 시)
 .data/
+
+# Vercel 빌드 시 public/ 복사본 (루트 index.html·api/ 와 혼동 방지)
+public/*
+!public/.gitkeep

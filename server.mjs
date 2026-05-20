@@ -159,6 +159,15 @@ async function handleApiRoute(req, res, u, apiPath) {
     return true;
   }
 
+  if (apiPath === "/api/health" && req.method === "GET") {
+    sendJson(res, 200, {
+      ok: true,
+      service: "aptCompare",
+      time: new Date().toISOString()
+    });
+    return true;
+  }
+
   if (apiPath === "/api/config" && req.method === "GET") {
     sendJson(res, 200, {
       port: PORT,

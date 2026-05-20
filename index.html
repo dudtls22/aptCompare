@@ -184,8 +184,41 @@
       return API_PROXY_BASE;
     }
 
+    async function parseApiJsonResponse(res) {
+      const ct = res.headers.get("content-type") || "";
+      const text = await res.text();
+      if (ct.includes("application/json") || (text.startsWith("{") && text.endsWith("}"))) {
+        try {
+          return JSON.parse(text);
+        } catch {
+          throw new Error("API 응답 JSON 파싱 실패");
+        }
+      }
+      if (res.status === 404) {
+        throw new Error(
+          "API 404: Vercel에 api/ 가 배포되지 않았습니다. Output Directory·Build Command를 비우고 Redeploy 하세요."
+        );
+      }
+      throw new Error(`API 오류 HTTP ${res.status}`);
+    }
+
     function computeLocalApiBase(port) {
       return `http://127.0.0.1:${port}`;
+    }
+
+    async function probeSameOriginApi() {
+      try {
+        const origin = window.location.origin;
+        if (!origin || origin === "null") return false;
+        const res = await fetch(`${origin}/api/health`, {
+          signal: AbortSignal.timeout(3000)
+        });
+        if (!res.ok) return false;
+        const data = await res.json();
+        return data?.ok === true;
+      } catch {
+        return false;
+      }
     }
 
     async function resolveApiProxyBase() {
@@ -193,31 +226,44 @@
       const pagePort = window.location.port;
       const proto = window.location.protocol;
 
+      if (proto === "file:") {
+        return discoverLocalApiBase();
+      }
+
+      if (host.endsWith(".vercel.app")) {
+        return "";
+      }
+
       if (host === "localhost" || host === "127.0.0.1") {
-        if (proto === "file:") {
-          return discoverLocalApiBase();
-        }
         if (LOCAL_API_PORTS_TRY.some((p) => String(p) === pagePort)) {
           return "";
         }
         return discoverLocalApiBase();
       }
-      if (host.endsWith(".vercel.app")) {
+
+      // GitHub Pages 등 정적 호스팅만 Vercel API 사용
+      if (host.endsWith(".github.io")) {
+        return VERCEL_API_PROXY_BASE;
+      }
+
+      // VPS·사설 IP·도메인으로 npm start 접속 → 같은 서버 API
+      if (await probeSameOriginApi()) {
         return "";
       }
-      return VERCEL_API_PROXY_BASE;
+
+      return discoverLocalApiBase();
     }
 
     async function discoverLocalApiBase() {
       for (const port of LOCAL_API_PORTS_TRY) {
         try {
-          const res = await fetch(computeLocalApiBase(port) + "/api/config", {
+          const base = computeLocalApiBase(port);
+          const res = await fetch(`${base}/api/health`, {
             signal: AbortSignal.timeout(2000)
           });
           if (!res.ok) continue;
           const data = await res.json();
-          if (data?.apiBase) return String(data.apiBase);
-          if (data?.port) return computeLocalApiBase(data.port);
+          if (data?.ok) return base;
         } catch {
           /* 다음 포트 시도 */
         }
@@ -1228,9 +1274,9 @@
         const res = await fetch(`${getApiProxyBase()}/api/market`, {
           signal: AbortSignal.timeout(15000)
         });
-        const data = await res.json();
+        const data = await parseApiJsonResponse(res);
         if (!res.ok) {
-          throw new Error(data?.message || `HTTP ${res.status}`);
+          throw new Error(data?.message || data?.error || `HTTP ${res.status}`);
         }
         if (data?.fx?.rate != null) {
           const rate = Number(data.fx.rate);
@@ -1890,7 +1936,7 @@
       try {
         API_PROXY_BASE = await resolveApiProxyBase();
       } catch {
-        API_PROXY_BASE = VERCEL_API_PROXY_BASE;
+        API_PROXY_BASE = (await probeSameOriginApi()) ? "" : VERCEL_API_PROXY_BASE;
       }
       refreshMarketTicker();
       setInterval(refreshMarketTicker, MARKET_REFRESH_MS);

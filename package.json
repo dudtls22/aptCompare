@@ -2,10 +2,12 @@
   "name": "aptcompare",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
     "start": "node server.mjs",
     "test": "node tests/favorite-resolve.smoke.mjs",
-    "vercel-build": "node scripts/vercel-build.mjs",
     "sync-public": "node scripts/vercel-build.mjs"
   }
 }

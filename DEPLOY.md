@@ -1,48 +1,63 @@
 # aptCompare 배포 가이드
 
-## 왜 Vercel에서 `/` 가 404였나?
+## 로컬 vs Vercel vs GitHub Pages
 
-1. Vercel은 **`public/` 안의 파일** 또는 **빌드 설정** 없이는 루트 `index.html`을 자동으로 웹에 올리지 않습니다.
-2. `api/` 만 있으면 **API 전용 프로젝트**로 보고 `/` 는 404가 납니다.
-3. `public/index.html` 은 **로컬에 자동 생성되지 않습니다** (`npm run sync-public` 실행 시에만 생성).
-4. `serve-page` 같은 우회 API는 **Git에 push 안 되면** 배포에 포함되지 않습니다.
+| 환경 | 화면 | API |
+|------|------|-----|
+| `npm start` (로컬/VPS) | `server.mjs` | `server.mjs` (`/api/*`) |
+| **Vercel** (`*.vercel.app`) | `index.html` | `api/*.js` |
+| **GitHub Pages** (`*.github.io`) | `index.html`만 | **Vercel API** (`apt-compare-beta.vercel.app`) |
 
-현재 `vercel.json` 은 `index.html` 을 **정적 파일로 명시 배포**합니다.
+GitHub Pages는 정적 파일만 올라갑니다. **실거래·시세 API는 Vercel이 반드시 살아 있어야** 합니다.
 
-## Vercel (화면 + API)
+---
+
+## Vercel (GitHub 연동) — 필수 설정
 
 **URL:** https://apt-compare-beta.vercel.app/
 
-### Git push (프로젝트 루트에서)
+### 1. GitHub에 push
 
 ```powershell
 cd c:\02.work\cursor_pro1
-git add vercel.json index.html css/ api/ lib/ package.json
+git add vercel.json package.json index.html server.mjs api/ lib/ css/ .gitignore .vercelignore DEPLOY.md
 git status
-git commit -m "fix: Vercel index.html 정적 배포"
+git commit -m "fix: Vercel api 배포 및 GitHub Pages 연동"
 git push origin main
 ```
 
-### Vercel 대시보드 (필수)
-
-Settings → Build & Development Settings
+### 2. Vercel 대시보드 (Settings → Build & Development)
 
 | 항목 | 값 |
 |------|-----|
 | Framework Preset | **Other** |
 | Root Directory | *(비움)* |
-| Build Command | *(비움)* — `vercel.json` 이 처리 |
-| Output Directory | *(비움)* — **`dist` / `public` 로 두면 API 404** |
+| **Build Command** | *(비움)* — `vercel.json` 의 `"buildCommand": ""` 사용 |
+| **Output Directory** | *(비움)* — **`public` / `dist` 이면 `/api/*` 전부 404** |
 
-저장 후 **Redeploy**.
+`package.json` 에 `vercel-build` 스크립트를 두지 마세요. (과거에 `public/` 만 만들어 API가 빠졌습니다.)
 
-### 배포 확인
+저장 후 **Deployments → … → Redeploy** (캐시 없이).
+
+### 3. 환경 변수 (Settings → Environment Variables)
+
+| 이름 | 용도 |
+|------|------|
+| `DATA_GO_KR_SERVICE_KEY` | 국토부 실거래 API |
+| `UPSTASH_REDIS_REST_URL` | 즐겨찾기 (선택) |
+| `UPSTASH_REDIS_REST_TOKEN` | 즐겨찾기 (선택) |
+| `KAKAO_ACCESS_TOKEN` | 알림 (선택) |
+| `CRON_SECRET` | cron 보호 (선택) |
+
+### 4. 배포 확인
 
 - https://apt-compare-beta.vercel.app/ → 화면
 - https://apt-compare-beta.vercel.app/api/health → `{"ok":true,...}`
-- https://apt-compare-beta.vercel.app/api/market → 환율·KB 시세 JSON
+- https://apt-compare-beta.vercel.app/api/market → JSON
 
-`/api/market` 이 404면: Output Directory 가 `public` 이 아닌지 확인 후 **Redeploy**.
+`/api/health` 가 Vercel HTML 404면 → Output Directory / Build Command 다시 확인 후 Redeploy.
+
+---
 
 ## GitHub Pages (선택)
 
@@ -50,12 +65,16 @@ Settings → Build & Development Settings
 
 - 저장소 **Public**
 - Settings → Pages → Source: **GitHub Actions**
-- `ERR_CONNECTION_TIMED_OUT` 이면 회사망/방화벽 또는 Pages 미배포 가능
+- API는 위 Vercel URL을 사용 (`index.html` 의 `VERCEL_API_PROXY_BASE`)
 
-## 로컬
+---
+
+## 로컬 · VPS
 
 ```powershell
 npm start
 ```
 
-→ http://localhost:3333/
+→ http://localhost:3333/ 또는 http://서버IP:3333/
+
+확인: `http://서버IP:3333/api/health` → `{"ok":true,...}`
