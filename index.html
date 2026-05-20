@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>아파트 실거래가 월별 시세 변동</title>
   <link rel="stylesheet" href="css/styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -11,38 +11,36 @@
   <div class="container">
     <div class="card">
       <div class="page-header">
-        <div class="page-header-text">
+        <div class="page-header-title-row">
           <h1>아파트 실거래가 월별 시세 변동</h1>
-          <p class="desc">공공데이터포털(국토교통부 아파트 매매 실거래자료) API 기반 월별 평균 거래금액 차트</p>
-          <div id="marketTicker" class="market-ticker" aria-live="polite">
-            <span class="market-ticker-item" id="fxTicker">
-              <strong>USD/KRW</strong> <span class="muted">불러오는 중…</span>
-            </span>
-            <span class="market-ticker-item" id="kbTicker">
-              <strong>KB금융</strong> <span class="muted">불러오는 중…</span>
-            </span>
-          </div>
+          <button type="button" class="btn-secondary btn-header-fav" id="openFavoritesBtn">즐겨찾기 보기</button>
         </div>
-        <div class="header-actions">
-          <button type="button" class="btn-secondary" id="openFavoritesBtn">즐겨찾기 보기</button>
+        <p class="desc">공공데이터포털(국토교통부 아파트 매매 실거래자료) API 기반 월별 평균 거래금액 차트</p>
+        <div id="marketTicker" class="market-ticker" aria-live="polite">
+          <span class="market-ticker-item" id="fxTicker">
+            <strong>USD/KRW</strong> <span class="muted">불러오는 중…</span>
+          </span>
+          <span class="market-ticker-item" id="kbTicker">
+            <strong>KB금융</strong> <span class="muted">불러오는 중…</span>
+          </span>
         </div>
       </div>
     </div>
 
     <div class="card">
       <div class="common-section">
-        <p class="section-title">공통 조회 조건</p>
-        <div class="common-grid">
-          <div class="field">
+        <p class="section-title section-title-compact">공통 조회 조건</p>
+        <div class="common-grid row-fields">
+          <div class="field field-compact">
             <label for="regionSelect">시/도</label>
             <select id="regionSelect"></select>
           </div>
-          <div class="field">
+          <div class="field field-compact">
             <label for="guSelect" id="districtLabel">시군구</label>
             <select id="guSelect"></select>
           </div>
-          <div class="field">
-            <label for="months">조회 개월 수</label>
+          <div class="field field-compact">
+            <label for="months">개월</label>
             <select id="months"></select>
           </div>
         </div>
@@ -51,95 +49,57 @@
       <div class="compare-wrap">
         <div class="compare-card c1">
           <div class="compare-card-head">
-            <p class="section-title">비교 1</p>
-            <button type="button" class="btn-link" data-fav-pick-slot="1">즐겨찾기에서 선택</button>
+            <p class="section-title section-title-compact">비교 1</p>
+            <div class="compare-card-actions">
+              <button type="button" class="btn-link" data-fav-pick-slot="1">찜에서 선택</button>
+            </div>
           </div>
-          <div class="compare-grid">
-            <div class="field">
+          <div class="compare-grid row-fields">
+            <div class="field field-compact">
               <label for="dongSelect1">동</label>
               <select id="dongSelect1"><option value="">선택 안함</option></select>
             </div>
-            <div class="field">
+            <div class="field field-compact">
               <label for="aptSelect1">아파트</label>
               <select id="aptSelect1"><option value="">선택 안함</option></select>
             </div>
-            <div class="field">
+            <div class="field field-compact">
               <label for="areaSelect1">평형</label>
               <select id="areaSelect1"><option value="">전체</option></select>
             </div>
           </div>
         </div>
 
-        <div class="compare-card c2">
-          <div class="compare-card-head">
-            <p class="section-title">비교 2</p>
-            <button type="button" class="btn-link" data-fav-pick-slot="2">즐겨찾기에서 선택</button>
-          </div>
-          <div class="compare-grid">
-            <div class="field">
-              <label for="dongSelect2">동</label>
-              <select id="dongSelect2"><option value="">선택 안함</option></select>
-            </div>
-            <div class="field">
-              <label for="aptSelect2">아파트</label>
-              <select id="aptSelect2"><option value="">선택 안함</option></select>
-            </div>
-            <div class="field">
-              <label for="areaSelect2">평형</label>
-              <select id="areaSelect2"><option value="">전체</option></select>
-            </div>
-          </div>
-        </div>
-
-        <div class="compare-card c3">
-          <div class="compare-card-head">
-            <p class="section-title">비교 3</p>
-            <button type="button" class="btn-link" data-fav-pick-slot="3">즐겨찾기에서 선택</button>
-          </div>
-          <div class="compare-grid">
-            <div class="field">
-              <label for="dongSelect3">동</label>
-              <select id="dongSelect3"><option value="">선택 안함</option></select>
-            </div>
-            <div class="field">
-              <label for="aptSelect3">아파트</label>
-              <select id="aptSelect3"><option value="">선택 안함</option></select>
-            </div>
-            <div class="field">
-              <label for="areaSelect3">평형</label>
-              <select id="areaSelect3"><option value="">전체</option></select>
-            </div>
-          </div>
-        </div>
       </div>
 
       <div class="field full">
         <button id="loadBtn">차트 조회</button>
-        <div id="message">지역 선택 후 비교 조건(동/아파트/평형)을 설정하세요. [+ 추가]로 최대 3건까지 비교할 수 있습니다.</div>
-        <div class="hint">
-          - 아파트를 선택하면 해당 아파트의 평형만 표시됩니다.<br />
-       </div>
+        <div id="message" class="message-compact">동·아파트·평형 선택 후 [아파트 추가+]로 최대 3건 비교</div>
       </div>
     </div>
 
-    <div class="card">
+    <div class="card chart-card">
       <canvas id="priceChart" height="120"></canvas>
       <div class="table-wrap">
-        <table>
+        <table class="deal-table deal-table-fixed">
+          <colgroup>
+            <col class="col-fav" />
+            <col class="col-date" />
+            <col class="col-cond" />
+            <col class="col-price" />
+            <col class="col-floor" />
+          </colgroup>
           <thead>
             <tr>
-              <th style="width:44px;">즐겨찾기</th>
-              <th>거래일</th>
-              <th>비교조건</th>
-              <th>동</th>
-              <th>상태</th>
-              <th>실거래가</th>
-              <th>층</th>
-              <th>호수</th>
+              <th class="col-fav">찜</th>
+              <th class="col-date">거래일</th>
+              <th class="col-cond">비교조건</th>
+              <th class="col-price">실거래가</th>
+              <th class="col-floor">층</th>
             </tr>
           </thead>
           <tbody id="dealTableBody">
-            <tr class="empty-row"><td colspan="8">조회하면 최근 10건이 표시됩니다.</td></tr>
+            <tr class="empty-row"><td colspan="5">조회하면 최근 10건이 표시됩니다.</td></tr>
           </tbody>
         </table>
         <div class="table-actions">
@@ -422,20 +382,57 @@
       targetDongEl.value = "";
     }
 
+    function getNextSlotId() {
+      const used = new Set(slots.map((s) => s.id));
+      for (let i = 1; i <= MAX_COMPARE_SLOTS; i++) {
+        if (!used.has(i)) return i;
+      }
+      return null;
+    }
+
+    function clearCompareSlotFields(slot) {
+      if (!slot?.dongEl) return;
+      slot.dongEl.value = "";
+      if (slot.aptEl) renderAptOptions(slot.aptEl, []);
+      if (slot.areaEl) renderAreaPlaceholder(slot.areaEl, "아파트를 먼저 선택하세요");
+    }
+
+    function removeCompareSlot(slotId) {
+      if (slotId <= 1) return;
+      const idx = slots.findIndex((s) => s.id === slotId);
+      if (idx < 0) return;
+      const slot = slots[idx];
+      clearCompareSlotFields(slot);
+      slot.cardEl.remove();
+      slots.splice(idx, 1);
+      updateAddCompareButton();
+      setMessage(`비교 ${slotId} 영역을 삭제했습니다.`);
+    }
+
     function buildCompareSlotCard(slotId) {
       const theme = SLOT_THEME[slotId];
       const card = document.createElement("div");
       card.className = "compare-card " + theme.cls;
       card.dataset.compareSlot = String(slotId);
+      const removeBtn =
+        slotId > 1
+          ? '<button type="button" class="btn-slot-remove" data-remove-slot="' +
+            slotId +
+            '" aria-label="비교 ' +
+            slotId +
+            ' 삭제" title="삭제">×</button>'
+          : "";
       card.innerHTML =
-        '<motion class="compare-card-head"><p class="section-title">비교 ' + slotId + "</p>" +
-        '<button type="button" class="btn-link" data-fav-pick-slot="' + slotId + '">즐겨찾기에서 선택</button></motion>' +
-        '<motion class="compare-grid">' +
-        '<motion class="field"><label for="dongSelect' + slotId + '">동</label><select id="dongSelect' + slotId + '"><option value="">선택 안함</option></select></motion>' +
-        '<motion class="field"><label for="aptSelect' + slotId + '">아파트</label><select id="aptSelect' + slotId + '"><option value="">선택 안함</option></select></motion>' +
-        '<motion class="field"><label for="areaSelect' + slotId + '">평형</label><select id="areaSelect' + slotId + '"><option value="">전체</option></select></motion>' +
-        "</motion>";
-      card.innerHTML = card.innerHTML.split("MOTIONTAG").join("div").split("motion").join("div");
+        '<div class="compare-card-head"><p class="section-title section-title-compact">비교 ' + slotId + "</p>" +
+        '<div class="compare-card-actions">' +
+        '<button type="button" class="btn-link" data-fav-pick-slot="' + slotId + '">찜에서 선택</button>' +
+        removeBtn +
+        "</div></div>" +
+        '<div class="compare-grid row-fields">' +
+        '<div class="field field-compact"><label for="dongSelect' + slotId + '">동</label><select id="dongSelect' + slotId + '"><option value="">선택 안함</option></select></div>' +
+        '<div class="field field-compact"><label for="aptSelect' + slotId + '">아파트</label><select id="aptSelect' + slotId + '"><option value="">선택 안함</option></select></div>' +
+        '<div class="field field-compact"><label for="areaSelect' + slotId + '">평형</label><select id="areaSelect' + slotId + '"><option value="">전체</option></select></div>' +
+        "</div>";
       return {
         id: slotId,
         color: theme.color,
@@ -448,7 +445,8 @@
 
     function addCompareSlot(options = {}) {
       if (slots.length >= MAX_COMPARE_SLOTS) return null;
-      const slotId = slots.length + 1;
+      const slotId = getNextSlotId();
+      if (!slotId) return null;
       const slot = buildCompareSlotCard(slotId);
       slots.push(slot);
       const root = compareSlotsRoot || document.getElementById("compareSlotsRoot");
@@ -516,7 +514,7 @@
         btn.type = "button";
         btn.id = "addCompareSlotBtn";
         btn.className = "btn-secondary btn-add-compare";
-        btn.textContent = "+ 추가";
+        btn.textContent = "아파트 추가+";
         row.appendChild(btn);
         wrap.appendChild(row);
       }
@@ -526,6 +524,7 @@
       setupCompareSectionDom();
       compareSlotsRoot = document.getElementById("compareSlotsRoot");
       addCompareSlotBtn = document.getElementById("addCompareSlotBtn");
+      if (addCompareSlotBtn) addCompareSlotBtn.textContent = "아파트 추가+";
       const root = compareSlotsRoot;
       const addBtn = addCompareSlotBtn;
 
@@ -549,6 +548,11 @@
       if (!root.dataset.favDelegated) {
         root.dataset.favDelegated = "1";
         root.addEventListener("click", (e) => {
+          const removeBtn = e.target.closest("[data-remove-slot]");
+          if (removeBtn) {
+            removeCompareSlot(Number(removeBtn.getAttribute("data-remove-slot")));
+            return;
+          }
           const btn = e.target.closest("[data-fav-pick-slot]");
           if (!btn) return;
           const sid = Number(btn.getAttribute("data-fav-pick-slot"));
@@ -560,7 +564,7 @@
         addBtn.dataset.bound = "1";
         addBtn.addEventListener("click", () => {
           addCompareSlot({ syncDong: true });
-          setMessage("비교 " + slots.length + "번 조건이 추가되었습니다.");
+          setMessage("아파트 비교 영역이 추가되었습니다. (비교 " + slots.length + ")");
         });
       }
     }
@@ -662,10 +666,6 @@
       const d = String(item?.dealDay || "").trim().padStart(2, "0");
       if (y && m && d) return `${y}-${m}-${d}`;
       return `${fallbackYm}-01`;
-    }
-
-    function getHoName(item) {
-      return String(item?.ho || item?.hoNm || item?.호 || "").trim();
     }
 
     function getFloor(item) {
@@ -891,7 +891,6 @@
             aptName: getAptName(it) || "-",
             dongName: rawDong || fallbackDong || "-",
             areaFloor: af != null ? String(af) : "",
-            hoName: getHoName(it) || "-",
             floor: getFloor(it) || "-",
             lineLabel: condition.label,
             lineColor: condition.color,
@@ -1084,6 +1083,7 @@
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           interaction: { mode: "index", intersect: false },
           plugins: {
             tooltip: {
@@ -1651,10 +1651,23 @@
     /* ========================================================================
        거래 테이블 · 조회 실행
        ======================================================================== */
+    function formatDealTableCompareLabel(p) {
+      const apt = String(p.aptName || "").trim();
+      const area = String(p.areaFloor || "").trim();
+      const parts = [];
+      if (apt && apt !== "-") parts.push(apt);
+      if (area) parts.push(`${area}㎡`);
+      if (!parts.length) {
+        const dong = String(p.dongName || "").trim();
+        if (dong && dong !== "-") parts.push(dong);
+      }
+      return parts.join(" ") || "-";
+    }
+
     async function renderDealTable() {
       const current = allDealPoints.slice(0, visibleDealCount);
       if (!current.length) {
-        dealTableBody.innerHTML = '<tr class="empty-row"><td colspan="8">조회 결과가 없습니다.</td></tr>';
+        dealTableBody.innerHTML = '<tr class="empty-row"><td colspan="5">조회 결과가 없습니다.</td></tr>';
         loadMoreBtn.style.display = "none";
         return;
       }
@@ -1683,22 +1696,23 @@
         const aptEnc = encodeURIComponent(p.aptName);
         const areaEnc = encodeURIComponent(areaStr);
         const rowClass = p.cancelled ? " class=\"deal-row-cancelled\"" : "";
-        const statusCell = p.cancelled
-          ? '<span class="deal-status-cancelled">취소</span>'
-          : '<span class="deal-status-normal">정상</span>';
+        const cancelPrefix = p.cancelled
+          ? '<span class="deal-cancel-badge">취소</span> '
+          : "";
+        const compareLabel = escapeHtml(formatDealTableCompareLabel(p));
+        const compareCell =
+          cancelPrefix +
+          `<span class="compare-tag compare-tag-deal" style="color:${p.lineColor}; border-color:${p.lineColor}; background:${p.lineColor}22;">${compareLabel}</span>`;
         const priceCell = p.cancelled
           ? `<span class="deal-price-cancelled">${formatKrw(p.price)}</span>`
           : formatKrw(p.price);
         return (
           `<tr${rowClass}>
-          <td data-label="즐겨찾기"><button type="button" class="${starClass}" data-fav-star="1" data-lawd="${lawdCd}" data-dong="${dongEnc}" data-apt="${aptEnc}" data-area="${areaEnc}" title="즐겨찾기">${starChar}</button></td>
-          <td data-label="거래일">${p.dateLabel}</td>
-          <td data-label="비교조건"><span class="compare-tag" style="color:${p.lineColor}; border-color:${p.lineColor}; background:${p.lineColor}22;">${p.lineLabel}</span></td>
-          <td data-label="동">${p.dongName}</td>
-          <td data-label="상태">${statusCell}</td>
-          <td data-label="실거래가">${priceCell}</td>
-          <td data-label="층">${p.floor}</td>
-          <td data-label="호수">${p.hoName}</td>
+          <td class="col-fav"><button type="button" class="${starClass}" data-fav-star="1" data-lawd="${lawdCd}" data-dong="${dongEnc}" data-apt="${aptEnc}" data-area="${areaEnc}" title="찜">${starChar}</button></td>
+          <td class="col-date">${p.dateLabel}</td>
+          <td class="col-cond">${compareCell}</td>
+          <td class="col-price">${priceCell}</td>
+          <td class="col-floor">${p.floor}</td>
         </tr>`
         );
       }).join("");

@@ -1,19 +1,18 @@
 /* ==========================================================================
-   아파트 실거래가 비교 — 스타일시트
+   아파트 실거래가 비교 — 모바일 단일 UI (웹·모바일 동일)
    ========================================================================== */
 
-/* --- 디자인 토큰 --- */
 :root {
-  --bg: #f5f7fb;
+  --bg: #ffffff;
   --card: #ffffff;
   --text: #111111;
   --muted: #4b5563;
   --primary: #2563eb;
   --border: #d1d5db;
   --danger: #b91c1c;
+  --app-max: 480px;
 }
 
-/* --- 기본 레이아웃 --- */
 * {
   box-sizing: border-box;
 }
@@ -22,38 +21,51 @@ body {
   margin: 0;
   font-family: "Segoe UI", "Malgun Gothic", sans-serif;
   color: var(--text);
-  background: var(--bg);
+  background: #eef1f5;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .container {
-  max-width: 980px;
-  margin: 24px auto;
-  padding: 0 16px;
+  max-width: var(--app-max);
+  margin: 0 auto;
+  padding: 10px;
+  padding-top: max(10px, env(safe-area-inset-top));
+  overflow-x: hidden;
+  min-height: 100vh;
+  background: var(--bg);
 }
 
 .card {
   background: var(--card);
-  border: 1px solid var(--border);
+  border: 1px solid #e5e7eb;
   border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
-  margin-bottom: 16px;
+  padding: 10px;
+  margin-bottom: 8px;
+  box-shadow: none;
 }
 
 h1 {
-  margin: 0 0 8px;
-  font-size: 24px;
+  margin: 0 0 4px;
+  font-size: 18px;
+  line-height: 1.3;
+  word-break: keep-all;
 }
 
 p.desc {
   margin: 0;
-  color: var(--text);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: 1fr;
+  gap: 14px;
 }
 
 .section-title {
@@ -66,37 +78,53 @@ p.desc {
   grid-column: 1 / -1;
 }
 
-/* --- 페이지 헤더 · 시세 티커 --- */
+/* --- 페이지 헤더 · 시세 --- */
 .page-header {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
 }
 
-.page-header-text {
-  flex: 1;
-  min-width: 200px;
-}
-
-.header-actions {
+.page-header-title-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: flex-start;
+  gap: 6px;
+  width: 100%;
+}
+
+.page-header-title-row h1 {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+
+.btn-secondary.btn-header-fav {
+  width: auto;
+  min-width: 0;
+  min-height: 0;
   flex-shrink: 0;
+  margin: 0 0 0 auto;
+  padding: 3px 7px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  border-radius: 6px;
+  white-space: nowrap;
 }
 
 .market-ticker {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px 20px;
-  margin-top: 12px;
-  padding: 10px 12px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 8px 10px;
   background: #f8fafc;
   border: 1px solid var(--border);
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .market-ticker-item {
@@ -104,6 +132,13 @@ p.desc {
   align-items: baseline;
   gap: 6px;
   flex-wrap: wrap;
+  padding: 4px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.market-ticker-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
 }
 
 .market-ticker-item strong {
@@ -129,36 +164,59 @@ p.desc {
 .common-section {
   background: #eff6ff;
   border: 1px solid #bfdbfe;
-  border-radius: 10px;
-  padding: 12px;
-  margin-bottom: 12px;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+}
+
+.section-title-compact {
+  margin-bottom: 6px !important;
+  font-size: 13px !important;
 }
 
 .common-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  align-items: end;
+}
+
+.common-grid.row-fields {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.common-grid .field {
+  min-width: 0;
 }
 
 .compare-wrap.compare-section {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .compare-section-title {
-  margin: 0 0 4px;
+  margin: 0 0 2px;
+  font-size: 13px;
 }
 
 .compare-slots-stack {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .compare-add-row {
   display: flex;
-  justify-content: flex-start;
+  justify-content: stretch;
+  margin-top: 4px;
+}
+
+.btn-add-compare {
+  width: 100%;
+  min-height: 40px;
+  font-size: 14px;
 }
 
 .btn-add-compare[disabled],
@@ -172,8 +230,8 @@ p.desc {
 }
 
 .compare-card {
-  border-radius: 10px;
-  padding: 12px;
+  border-radius: 8px;
+  padding: 8px 10px;
   border: 1px solid var(--border);
 }
 
@@ -194,46 +252,112 @@ p.desc {
 
 .compare-card-head {
   display: flex;
+  flex-direction: row;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 10px;
-  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
 }
 
 .compare-card-head .section-title {
   margin: 0;
+  font-size: 13px;
+  flex: 0 0 auto;
+}
+
+.compare-card-actions {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  justify-content: flex-end;
+  gap: 6px;
+  min-width: 0;
 }
 
 .compare-card-head .btn-link {
   margin-top: 0;
+  font-size: 12px;
+  padding: 4px 2px;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.btn-slot-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  color: #64748b;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
   flex-shrink: 0;
+}
+
+.btn-slot-remove:hover {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.btn-slot-remove:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
 }
 
 .compare-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: 1fr;
+  gap: 8px;
   align-items: end;
 }
 
-@media (max-width: 640px) {
-  .compare-grid {
-    grid-template-columns: 1fr;
-  }
+.compare-grid.row-fields {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
+}
+
+.field-compact label {
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 0;
+}
+
+.field-compact select {
+  min-height: 40px;
+  padding: 8px 26px 8px 8px;
+  font-size: 14px;
+  border-radius: 8px;
+}
+
+.field.full {
+  margin-top: 2px;
+}
+
+.message-compact {
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+  margin-top: 6px !important;
 }
 
 /* --- 폼 · 버튼 --- */
 label {
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text);
+  margin-bottom: 2px;
 }
 
 input,
@@ -241,11 +365,24 @@ select,
 option,
 button {
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 10px 12px;
-  font-size: 14px;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 16px;
   width: 100%;
   color: var(--text);
+}
+
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%234b5563' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 40px;
+  min-height: 48px;
+}
+
+input {
+  min-height: 48px;
 }
 
 button {
@@ -255,6 +392,15 @@ button {
   cursor: pointer;
   border: none;
   margin-top: 8px;
+  touch-action: manipulation;
+  min-height: 48px;
+}
+
+#loadBtn {
+  width: 100%;
+  font-size: 15px;
+  margin-top: 8px;
+  min-height: 44px;
 }
 
 button:disabled {
@@ -267,9 +413,8 @@ button:disabled {
   color: var(--primary);
   border: 1px solid var(--primary);
   margin-top: 0;
-  width: auto;
   padding: 8px 14px;
-  font-size: 13px;
+  font-size: 15px;
 }
 
 .btn-secondary:hover {
@@ -280,10 +425,11 @@ button:disabled {
   background: transparent;
   color: var(--primary);
   border: none;
-  margin-top: 4px;
-  padding: 4px 0;
+  margin-top: 0;
+  padding: 8px 4px;
   width: auto;
-  font-size: 13px;
+  min-height: 44px;
+  font-size: 14px;
   font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -294,7 +440,9 @@ button:disabled {
 }
 
 #loadMoreBtn {
-  width: auto;
+  width: 100%;
+  min-height: 48px;
+  font-size: 15px;
   padding: 8px 16px;
   margin-top: 0;
   background: #374151;
@@ -304,6 +452,7 @@ button:disabled {
 #message {
   margin-top: 8px;
   font-size: 14px;
+  line-height: 1.55;
   color: var(--text);
   white-space: pre-wrap;
 }
@@ -325,52 +474,135 @@ button:disabled {
   line-height: 1.5;
 }
 
+/* --- 차트 --- */
+.chart-card {
+  padding: 8px 10px;
+}
+
+#priceChart {
+  min-height: 240px;
+  max-height: 50vh;
+  width: 100% !important;
+}
+
 /* --- 거래 테이블 --- */
 .table-wrap {
   overflow-x: auto;
-  margin-top: 12px;
+  margin-top: 14px;
+  margin-left: -4px;
+  margin-right: -4px;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
 }
 
-table {
+.deal-table {
+  min-width: 360px;
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
 }
 
-th,
-td {
+.deal-table-fixed {
+  table-layout: fixed;
+}
+
+.deal-table .col-fav {
+  width: 32px;
+}
+
+.deal-table .col-date {
+  width: 64px;
+}
+
+.deal-table .col-price {
+  width: 72px;
+}
+
+.deal-table .col-floor {
+  width: 28px;
+}
+
+.deal-table th,
+.deal-table td {
   border-bottom: 1px solid var(--border);
-  padding: 8px 6px;
+  padding: 8px 4px;
   text-align: left;
   white-space: nowrap;
 }
 
-th {
+.deal-table th.col-fav,
+.deal-table td.col-fav {
+  padding: 6px 2px;
+  text-align: center;
+}
+
+.deal-table th.col-date,
+.deal-table td.col-date {
+  font-size: 11px;
+  padding-left: 2px;
+  padding-right: 2px;
+}
+
+.deal-table th.col-price,
+.deal-table td.col-price {
+  text-align: right;
+  font-size: 12px;
+}
+
+.deal-table th.col-floor,
+.deal-table td.col-floor {
+  text-align: center;
+  font-size: 12px;
+}
+
+.deal-table td.col-cond {
+  white-space: normal;
+  word-break: break-all;
+  line-height: 1.35;
+  padding-left: 6px;
+  padding-right: 4px;
+}
+
+.deal-table th {
   background: #f9fafb;
   font-weight: 700;
+}
+
+.deal-table th:first-child,
+.deal-table td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: #f9fafb;
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.04);
+}
+
+.deal-table td:first-child {
+  background: #fff;
+}
+
+.deal-table .deal-row-cancelled td {
+  background: #fef2f2;
+}
+
+.deal-table .deal-row-cancelled td:first-child {
+  background: #fef2f2;
 }
 
 .empty-row {
   color: var(--text);
 }
 
-.deal-status-cancelled {
+.deal-cancel-badge {
   display: inline-block;
-  padding: 2px 8px;
+  padding: 2px 6px;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   color: #fff;
   background: var(--danger);
-}
-
-.deal-status-normal {
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.deal-row-cancelled td {
-  background: #fef2f2;
+  vertical-align: middle;
+  line-height: 1.2;
 }
 
 .deal-price-cancelled {
@@ -391,6 +623,33 @@ th {
   font-weight: 700;
   font-size: 12px;
   border: 1px solid transparent;
+  white-space: nowrap;
+  max-width: 11em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+.compare-tag.compare-tag-deal {
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  word-break: keep-all;
+  font-size: 11px;
+  padding: 2px 6px;
+  line-height: 1.3;
+}
+
+.deal-cancel-badge + .compare-tag.compare-tag-deal {
+  max-width: none;
+}
+
+.deal-table .star-btn {
+  min-width: 28px;
+  min-height: 28px;
+  font-size: 18px;
+  padding: 0;
 }
 
 /* --- 즐겨찾기 · 알림 --- */
@@ -400,7 +659,9 @@ th {
   margin: 0;
   padding: 2px 6px;
   width: auto;
-  font-size: 18px;
+  min-width: 40px;
+  min-height: 40px;
+  font-size: 20px;
   line-height: 1;
   cursor: pointer;
   color: #9ca3af;
@@ -408,10 +669,6 @@ th {
 
 .star-btn.filled {
   color: #f59e0b;
-}
-
-.star-btn:hover {
-  opacity: 0.85;
 }
 
 .notify-btn {
@@ -432,14 +689,6 @@ th {
   filter: none;
 }
 
-.notify-btn:hover {
-  opacity: 0.75;
-}
-
-.notify-btn.on:hover {
-  opacity: 1;
-}
-
 .fav-empty {
   text-align: center;
   color: var(--text);
@@ -450,19 +699,20 @@ th {
 
 .fav-row {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
   border: 1px solid var(--border);
   border-radius: 10px;
   margin-bottom: 8px;
   background: #fafafa;
+  flex-wrap: wrap;
 }
 
 .fav-row-main {
   flex: 1;
   min-width: 0;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.45;
 }
 
@@ -482,17 +732,13 @@ th {
   color: var(--danger);
   border: 1px solid #fecaca;
   margin: 0;
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   border-radius: 8px;
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1;
   flex-shrink: 0;
-}
-
-.btn-remove-fav:hover {
-  background: #fecaca;
 }
 
 .fav-row.pickable {
@@ -504,16 +750,16 @@ th {
   border-color: #bfdbfe;
 }
 
-/* --- 모달 --- */
+/* --- 모달 (하단 시트) --- */
 .modal-overlay {
   position: fixed;
   inset: 0;
   background: rgba(15, 23, 42, 0.45);
   display: none;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
   z-index: 1000;
-  padding: 16px;
+  padding: 0;
 }
 
 .modal-overlay.open {
@@ -522,14 +768,16 @@ th {
 
 .modal-panel {
   background: var(--card);
-  border-radius: 12px;
+  border-radius: 16px 16px 0 0;
   border: 1px solid var(--border);
-  max-width: 520px;
+  border-bottom: none;
+  max-width: var(--app-max);
   width: 100%;
-  max-height: min(80vh, 560px);
+  max-height: 92vh;
+  max-height: 92dvh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.12);
 }
 
 .modal-head {
@@ -537,13 +785,17 @@ th {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 14px 16px;
+  padding: 16px;
   border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--card);
+  z-index: 1;
 }
 
 .modal-head h2 {
   margin: 0;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 800;
 }
 
@@ -552,216 +804,19 @@ th {
   color: var(--text);
   border: none;
   margin: 0;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   border-radius: 8px;
-  font-size: 20px;
+  font-size: 22px;
   line-height: 1;
   cursor: pointer;
   font-weight: 700;
-}
-
-.modal-close:hover {
-  background: #e5e7eb;
+  min-height: 44px;
 }
 
 .modal-body {
-  padding: 12px 16px 16px;
+  padding: 12px 16px max(20px, env(safe-area-inset-bottom));
   overflow-y: auto;
   flex: 1;
-}
-
-/* --- 반응형: 태블릿 --- */
-@media (max-width: 900px) {
-  .compare-wrap.compare-section {
-    gap: 10px;
-  }
-}
-
-@media (max-width: 760px) {
-  .grid,
-  .common-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* --- 반응형: 모바일 --- */
-@media (max-width: 640px) {
-  body {
-    background: #fff;
-  }
-
-  .container {
-    margin: 0 auto;
-    padding: 10px;
-  }
-
-  .card {
-    padding: 12px;
-    margin-bottom: 10px;
-    border-radius: 10px;
-    box-shadow: none;
-  }
-
-  h1 {
-    font-size: 20px;
-    line-height: 1.25;
-  }
-
-  p.desc,
-  .hint,
-  #message {
-    font-size: 13px;
-    line-height: 1.45;
-  }
-
-  input,
-  select,
-  option,
-  button {
-    min-height: 44px;
-    font-size: 16px;
-  }
-
-  .page-header,
-  .header-actions,
-  .btn-secondary {
-    width: 100%;
-  }
-
-  .common-section,
-  .compare-card {
-    padding: 10px;
-  }
-
-  .compare-card-head {
-    align-items: flex-start;
-  }
-
-  .compare-card-head .btn-link {
-    font-size: 14px;
-    padding: 2px 0;
-  }
-
-  #priceChart {
-    min-height: 260px;
-  }
-
-  .table-wrap {
-    overflow-x: visible;
-  }
-
-  table,
-  thead,
-  tbody,
-  tr,
-  th,
-  td {
-    display: block;
-  }
-
-  thead {
-    display: none;
-  }
-
-  tbody tr {
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 8px 10px;
-    margin-bottom: 10px;
-    background: #fff;
-  }
-
-  tbody tr.empty-row {
-    padding: 16px;
-    text-align: center;
-  }
-
-  td {
-    border-bottom: 1px solid #edf0f3;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 9px 0;
-    white-space: normal;
-    word-break: keep-all;
-    text-align: right;
-  }
-
-  td:last-child {
-    border-bottom: none;
-  }
-
-  td::before {
-    content: attr(data-label);
-    flex: 0 0 86px;
-    color: #374151;
-    font-weight: 800;
-    text-align: left;
-  }
-
-  td[data-label="즐겨찾기"] {
-    justify-content: flex-start;
-    align-items: center;
-  }
-
-  td[data-label="즐겨찾기"]::before {
-    flex: 0 0 86px;
-  }
-
-  .compare-tag {
-    white-space: normal;
-    text-align: left;
-    line-height: 1.35;
-  }
-
-  #loadMoreBtn {
-    width: 100%;
-    min-height: 44px;
-  }
-
-  .modal-overlay {
-    padding: 8px;
-    align-items: flex-end;
-  }
-
-  .modal-panel {
-    max-height: 88vh;
-    border-radius: 14px 14px 0 0;
-  }
-
-  .modal-head,
-  .modal-body {
-    padding-left: 12px;
-    padding-right: 12px;
-  }
-}
-
-@media (max-width: 420px) {
-  .container {
-    padding: 8px;
-  }
-
-  .card {
-    padding: 10px;
-  }
-
-  h1 {
-    font-size: 18px;
-  }
-
-  .section-title {
-    font-size: 14px;
-  }
-
-  td::before,
-  td[data-label="즐겨찾기"]::before {
-    flex-basis: 74px;
-  }
-
-  .fav-row {
-    align-items: flex-start;
-  }
 }
