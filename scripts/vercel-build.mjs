@@ -3,15 +3,22 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
-const src = path.join(root, "index.html");
-const destDir = path.join(root, "public");
-const dest = path.join(destDir, "index.html");
+const publicDir = path.join(root, "public");
 
-if (!fs.existsSync(src)) {
-  console.error("[vercel-build] index.html not found at", src);
-  process.exit(1);
+function copyRecursive(src, dest) {
+  fs.mkdirSync(dest, { recursive: true });
+  for (const name of fs.readdirSync(src)) {
+    const from = path.join(src, name);
+    const to = path.join(dest, name);
+    if (fs.statSync(from).isDirectory()) {
+      copyRecursive(from, to);
+    } else {
+      fs.copyFileSync(from, to);
+    }
+  }
 }
 
-fs.mkdirSync(destDir, { recursive: true });
-fs.copyFileSync(src, dest);
-console.log("[vercel-build] copied index.html -> public/index.html");
+fs.mkdirSync(publicDir, { recursive: true });
+fs.copyFileSync(path.join(root, "index.html"), path.join(publicDir, "index.html"));
+copyRecursive(path.join(root, "css"), path.join(publicDir, "css"));
+console.log("[vercel-build] copied index.html and css/ -> public/");

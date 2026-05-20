@@ -27,6 +27,7 @@ jobs:
         run: |
           mkdir -p site
           cp index.html site/
+          cp -r css site/
 
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -4,12 +4,16 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { getMarketData } from "./lib/market.mjs";
+import { getFavorites, setFavorites } from "./lib/favorites-store.mjs";
 import {
   getNotifyConfigStatus,
   getSubscriptions,
   setSubscriptions
 } from "./lib/notify-store.mjs";
 import { runDailyNotify } from "./lib/daily-notify.mjs";
+import { sendTestKakaoLatestTrade } from "./lib/test-kakao-notify.mjs";
+import { validateKakaoAccessToken } from "./lib/kakao.mjs";
+import { buildDataGoKrQueryString } from "./lib/data-go-key.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -63,7 +67,7 @@ function sendJson(res, status, obj, extraHeaders = {}) {
     "Content-Type": "application/json; charset=utf-8",
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Id",
     ...extraHeaders
   });
   res.end(JSON.stringify(obj));
@@ -84,18 +88,86 @@ function isCronAuthorized(req) {
   return String(req.headers.authorization || "") === `Bearer ${secret}`;
 }
 
-async function handleApiRoute(req, res, u) {
+function normalizeApiPath(pathname) {
+  const p = String(pathname || "/").trim();
+  if (p.length > 1 && p.endsWith("/")) {
+    return p.slice(0, -1);
+  }
+  return p || "/";
+}
+
+async function handleTestKakaoTokenRoute(req, res, apiPath) {
+  if (apiPath !== "/api/test/kakao-token") {
+    return false;
+  }
+  if (req.method !== "GET") {
+    sendJson(res, 405, { error: "method_not_allowed" });
+    return true;
+  }
+  if (!isCronAuthorized(req)) {
+    sendJson(res, 401, { error: "unauthorized" });
+    return true;
+  }
+  try {
+    const tokenInfo = await validateKakaoAccessToken();
+    sendJson(res, 200, { ok: true, tokenInfo });
+  } catch (err) {
+    sendJson(res, 500, {
+      error: "kakao_token_invalid",
+      message: err instanceof Error ? err.message : String(err)
+    });
+  }
+  return true;
+}
+
+async function handleTestKakaoRoute(req, res, u, apiPath) {
+  if (apiPath !== "/api/test/kakao") {
+    return false;
+  }
+  if (req.method !== "GET" && req.method !== "POST") {
+    sendJson(res, 405, { error: "method_not_allowed" });
+    return true;
+  }
+  if (!isCronAuthorized(req)) {
+    sendJson(res, 401, { error: "unauthorized" });
+    return true;
+  }
+  try {
+    const lawdCd = u.searchParams.get("lawdCd") || "11680";
+    sendJson(res, 200, await sendTestKakaoLatestTrade({ lawdCd }));
+  } catch (err) {
+    sendJson(res, 500, {
+      error: "test_kakao_failed",
+      message: err instanceof Error ? err.message : String(err)
+    });
+  }
+  return true;
+}
+
+async function handleApiRoute(req, res, u, apiPath) {
   if (req.method === "OPTIONS") {
     res.writeHead(204, {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      "Access-Control-Allow-Methods": "GET, POST, PUT, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Id"
     });
     res.end();
     return true;
   }
 
-  if (u.pathname === "/api/market" && req.method === "GET") {
+  if (await handleTestKakaoRoute(req, res, u, apiPath)) {
+    return true;
+  }
+
+  if (apiPath === "/api/config" && req.method === "GET") {
+    sendJson(res, 200, {
+      port: PORT,
+      apiBase: `http://127.0.0.1:${PORT}`
+    });
+    return true;
+  }
+
+  if (apiPath === "/api/market" && req.method === "GET") {
     try {
       sendJson(res, 200, await getMarketData());
     } catch (err) {
@@ -107,7 +179,71 @@ async function handleApiRoute(req, res, u) {
     return true;
   }
 
-  if (u.pathname === "/api/notifications") {
+  if (apiPath === "/api/favorites") {
+    const clientId =
+      u.searchParams.get("clientId") ||
+      String(req.headers["x-client-id"] || "").trim();
+
+    if (req.method === "GET") {
+      if (!clientId) {
+        sendJson(res, 400, {
+          error: "missing_client_id",
+          message: "clientId 쿼리 또는 X-Client-Id 헤더가 필요합니다."
+        });
+        return true;
+      }
+      try {
+        const result = await getFavorites(clientId);
+        sendJson(res, 200, {
+          clientId,
+          favorites: result.favorites,
+          store: result,
+          config: getNotifyConfigStatus()
+        });
+      } catch (err) {
+        sendJson(res, 500, {
+          error: "favorites_failed",
+          message: err instanceof Error ? err.message : String(err)
+        });
+      }
+      return true;
+    }
+
+    if (req.method === "POST" || req.method === "PUT") {
+      try {
+        const raw = await readRequestBody(req);
+        const body = raw ? JSON.parse(raw) : {};
+        const id = String(body?.clientId || clientId || "").trim();
+        const list = Array.isArray(body?.favorites) ? body.favorites : null;
+        if (!id || !list) {
+          sendJson(res, 400, {
+            error: "invalid_body",
+            message: '{ "clientId": "...", "favorites": [...] } 형식이 필요합니다.'
+          });
+          return true;
+        }
+        const result = await setFavorites(id, list);
+        sendJson(res, 200, {
+          ok: true,
+          clientId: id,
+          favorites: result.favorites,
+          store: result,
+          config: getNotifyConfigStatus()
+        });
+      } catch (err) {
+        sendJson(res, 500, {
+          error: "favorites_failed",
+          message: err instanceof Error ? err.message : String(err)
+        });
+      }
+      return true;
+    }
+
+    sendJson(res, 405, { error: "method_not_allowed" });
+    return true;
+  }
+
+  if (apiPath === "/api/notifications") {
     if (req.method === "GET") {
       try {
         sendJson(res, 200, {
@@ -163,7 +299,7 @@ async function handleApiRoute(req, res, u) {
     }
   }
 
-  if (u.pathname === "/api/cron/daily-notify" && (req.method === "GET" || req.method === "POST")) {
+  if (apiPath === "/api/cron/daily-notify" && (req.method === "GET" || req.method === "POST")) {
     if (!isCronAuthorized(req)) {
       sendJson(res, 401, { error: "unauthorized" });
       return true;
@@ -222,8 +358,8 @@ function proxyToApi(res, u) {
 
   const params = new URLSearchParams(u.search);
   params.delete("target");
-  params.set("serviceKey", SERVICE_KEY);
-  const upstreamUrl = `${upstreamBase}?${params.toString()}`;
+  const query = buildDataGoKrQueryString(params, SERVICE_KEY);
+  const upstreamUrl = `${upstreamBase}?${query}`;
 
   https
     .get(upstreamUrl, (r) => {
@@ -252,13 +388,26 @@ http
       return;
     }
 
-    if (u.pathname.startsWith("/api/")) {
-      const handled = await handleApiRoute(req, res, u);
-      if (handled) return;
+    const apiPath = normalizeApiPath(u.pathname);
+
+    if (apiPath.startsWith("/api-proxy/") || apiPath === "/api/proxy") {
+      proxyToApi(res, u);
+      return;
     }
 
-    if (u.pathname.startsWith("/api-proxy/") || u.pathname === "/api/proxy") {
-      proxyToApi(res, u);
+    if (apiPath.startsWith("/api/")) {
+      if (await handleTestKakaoTokenRoute(req, res, apiPath)) {
+        return;
+      }
+      if (await handleTestKakaoRoute(req, res, u, apiPath)) {
+        return;
+      }
+      const handled = await handleApiRoute(req, res, u, apiPath);
+      if (handled) return;
+      sendJson(res, 404, {
+        error: "api_not_found",
+        message: `${apiPath} API를 찾을 수 없습니다. server.mjs 저장 후 npm start 를 다시 실행했는지 확인하세요.`
+      });
       return;
     }
 

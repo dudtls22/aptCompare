@@ -1,0 +1,767 @@
+/* ==========================================================================
+   아파트 실거래가 비교 — 스타일시트
+   ========================================================================== */
+
+/* --- 디자인 토큰 --- */
+:root {
+  --bg: #f5f7fb;
+  --card: #ffffff;
+  --text: #111111;
+  --muted: #4b5563;
+  --primary: #2563eb;
+  --border: #d1d5db;
+  --danger: #b91c1c;
+}
+
+/* --- 기본 레이아웃 --- */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", "Malgun Gothic", sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+.container {
+  max-width: 980px;
+  margin: 24px auto;
+  padding: 0 16px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+  margin-bottom: 16px;
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 24px;
+}
+
+p.desc {
+  margin: 0;
+  color: var(--text);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.section-title {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.full {
+  grid-column: 1 / -1;
+}
+
+/* --- 페이지 헤더 · 시세 티커 --- */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.page-header-text {
+  flex: 1;
+  min-width: 200px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.market-ticker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.market-ticker-item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.market-ticker-item strong {
+  font-weight: 700;
+}
+
+.market-ticker-item .up {
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.market-ticker-item .down {
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.market-ticker-item .muted {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* --- 공통 조회 · 비교 슬롯 --- */
+.common-section {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.common-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.compare-wrap.compare-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.compare-section-title {
+  margin: 0 0 4px;
+}
+
+.compare-slots-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.compare-add-row {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.btn-add-compare[disabled],
+.btn-add-compare[hidden] {
+  display: none;
+}
+
+.compare-wrap > .compare-card.c2,
+.compare-wrap > .compare-card.c3 {
+  display: none !important;
+}
+
+.compare-card {
+  border-radius: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+}
+
+.compare-card.c1 {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.compare-card.c2 {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.compare-card.c3 {
+  background: #ecfdf5;
+  border-color: #bbf7d0;
+}
+
+.compare-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.compare-card-head .section-title {
+  margin: 0;
+}
+
+.compare-card-head .btn-link {
+  margin-top: 0;
+  flex-shrink: 0;
+}
+
+.compare-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  align-items: end;
+}
+
+@media (max-width: 640px) {
+  .compare-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* --- 폼 · 버튼 --- */
+label {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+}
+
+input,
+select,
+option,
+button {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  width: 100%;
+  color: var(--text);
+}
+
+button {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  margin-top: 8px;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.btn-secondary {
+  background: #fff;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  margin-top: 0;
+  width: auto;
+  padding: 8px 14px;
+  font-size: 13px;
+}
+
+.btn-secondary:hover {
+  background: #eff6ff;
+}
+
+.btn-link {
+  background: transparent;
+  color: var(--primary);
+  border: none;
+  margin-top: 4px;
+  padding: 4px 0;
+  width: auto;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.btn-link:hover {
+  color: #1d4ed8;
+}
+
+#loadMoreBtn {
+  width: auto;
+  padding: 8px 16px;
+  margin-top: 0;
+  background: #374151;
+}
+
+/* --- 메시지 · 안내 --- */
+#message {
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--text);
+  white-space: pre-wrap;
+}
+
+#message.error {
+  color: var(--danger);
+}
+
+.hint {
+  font-size: 13px;
+  color: var(--text);
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+.notify-hint {
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* --- 거래 테이블 --- */
+.table-wrap {
+  overflow-x: auto;
+  margin-top: 12px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+th,
+td {
+  border-bottom: 1px solid var(--border);
+  padding: 8px 6px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+th {
+  background: #f9fafb;
+  font-weight: 700;
+}
+
+.empty-row {
+  color: var(--text);
+}
+
+.deal-status-cancelled {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--danger);
+}
+
+.deal-status-normal {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.deal-row-cancelled td {
+  background: #fef2f2;
+}
+
+.deal-price-cancelled {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+.table-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.compare-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 12px;
+  border: 1px solid transparent;
+}
+
+/* --- 즐겨찾기 · 알림 --- */
+.star-btn {
+  background: transparent;
+  border: none;
+  margin: 0;
+  padding: 2px 6px;
+  width: auto;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  color: #9ca3af;
+}
+
+.star-btn.filled {
+  color: #f59e0b;
+}
+
+.star-btn:hover {
+  opacity: 0.85;
+}
+
+.notify-btn {
+  background: transparent;
+  border: none;
+  margin: 0;
+  padding: 2px 6px;
+  width: auto;
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.35;
+  filter: grayscale(1);
+}
+
+.notify-btn.on {
+  opacity: 1;
+  filter: none;
+}
+
+.notify-btn:hover {
+  opacity: 0.75;
+}
+
+.notify-btn.on:hover {
+  opacity: 1;
+}
+
+.fav-empty {
+  text-align: center;
+  color: var(--text);
+  padding: 28px 12px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.fav-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  background: #fafafa;
+}
+
+.fav-row-main {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.fav-row-title {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.fav-row-meta {
+  color: var(--text);
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.btn-remove-fav {
+  background: #fee2e2;
+  color: var(--danger);
+  border: 1px solid #fecaca;
+  margin: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 8px;
+  font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.btn-remove-fav:hover {
+  background: #fecaca;
+}
+
+.fav-row.pickable {
+  cursor: pointer;
+}
+
+.fav-row.pickable:hover {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+/* --- 모달 --- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.modal-overlay.open {
+  display: flex;
+}
+
+.modal-panel {
+  background: var(--card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  max-width: 520px;
+  width: 100%;
+  max-height: min(80vh, 560px);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-head h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.modal-close {
+  background: #f3f4f6;
+  color: var(--text);
+  border: none;
+  margin: 0;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 8px;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.modal-close:hover {
+  background: #e5e7eb;
+}
+
+.modal-body {
+  padding: 12px 16px 16px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* --- 반응형: 태블릿 --- */
+@media (max-width: 900px) {
+  .compare-wrap.compare-section {
+    gap: 10px;
+  }
+}
+
+@media (max-width: 760px) {
+  .grid,
+  .common-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- 반응형: 모바일 --- */
+@media (max-width: 640px) {
+  body {
+    background: #fff;
+  }
+
+  .container {
+    margin: 0 auto;
+    padding: 10px;
+  }
+
+  .card {
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    box-shadow: none;
+  }
+
+  h1 {
+    font-size: 20px;
+    line-height: 1.25;
+  }
+
+  p.desc,
+  .hint,
+  #message {
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  input,
+  select,
+  option,
+  button {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .page-header,
+  .header-actions,
+  .btn-secondary {
+    width: 100%;
+  }
+
+  .common-section,
+  .compare-card {
+    padding: 10px;
+  }
+
+  .compare-card-head {
+    align-items: flex-start;
+  }
+
+  .compare-card-head .btn-link {
+    font-size: 14px;
+    padding: 2px 0;
+  }
+
+  #priceChart {
+    min-height: 260px;
+  }
+
+  .table-wrap {
+    overflow-x: visible;
+  }
+
+  table,
+  thead,
+  tbody,
+  tr,
+  th,
+  td {
+    display: block;
+  }
+
+  thead {
+    display: none;
+  }
+
+  tbody tr {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    background: #fff;
+  }
+
+  tbody tr.empty-row {
+    padding: 16px;
+    text-align: center;
+  }
+
+  td {
+    border-bottom: 1px solid #edf0f3;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 9px 0;
+    white-space: normal;
+    word-break: keep-all;
+    text-align: right;
+  }
+
+  td:last-child {
+    border-bottom: none;
+  }
+
+  td::before {
+    content: attr(data-label);
+    flex: 0 0 86px;
+    color: #374151;
+    font-weight: 800;
+    text-align: left;
+  }
+
+  td[data-label="즐겨찾기"] {
+    justify-content: flex-start;
+    align-items: center;
+  }
+
+  td[data-label="즐겨찾기"]::before {
+    flex: 0 0 86px;
+  }
+
+  .compare-tag {
+    white-space: normal;
+    text-align: left;
+    line-height: 1.35;
+  }
+
+  #loadMoreBtn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .modal-overlay {
+    padding: 8px;
+    align-items: flex-end;
+  }
+
+  .modal-panel {
+    max-height: 88vh;
+    border-radius: 14px 14px 0 0;
+  }
+
+  .modal-head,
+  .modal-body {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
+
+@media (max-width: 420px) {
+  .container {
+    padding: 8px;
+  }
+
+  .card {
+    padding: 10px;
+  }
+
+  h1 {
+    font-size: 18px;
+  }
+
+  .section-title {
+    font-size: 14px;
+  }
+
+  td::before,
+  td[data-label="즐겨찾기"]::before {
+    flex-basis: 74px;
+  }
+
+  .fav-row {
+    align-items: flex-start;
+  }
+}

@@ -1,3 +1,5 @@
+import { buildDataGoKrQueryString } from "../lib/data-go-key.mjs";
+
 const UPSTREAM_BY_TARGET = {
   "trade-dev": "https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev",
   trade: "https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade"
@@ -41,9 +43,8 @@ export default async function handler(req, res) {
     }
 
     url.searchParams.delete("target");
-    url.searchParams.set("serviceKey", serviceKey);
-
-    const upstreamUrl = `${upstreamBase}?${url.searchParams.toString()}`;
+    const query = buildDataGoKrQueryString(url.searchParams, serviceKey);
+    const upstreamUrl = `${upstreamBase}?${query}`;
     const upstreamRes = await fetch(upstreamUrl);
     const text = await upstreamRes.text();
 

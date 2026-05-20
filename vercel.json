@@ -1,18 +1,21 @@
 {
-  "rewrites": [
+  "version": 2,
+  "builds": [
+    { "src": "index.html", "use": "@vercel/static" },
+    { "src": "css/**", "use": "@vercel/static" },
     {
-      "source": "/",
-      "destination": "/api/serve-page"
+      "src": "api/**/*.js",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": ["lib/**"]
+      }
     }
   ],
-  "functions": {
-    "api/serve-page.js": {
-      "includeFiles": "index.html"
-    },
-    "api/**/*.js": {
-      "includeFiles": "lib/**"
-    }
-  },
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ],
   "crons": [
     {
       "path": "/api/cron/daily-notify",
@@ -33,7 +36,7 @@
         },
         {
           "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type, Authorization"
+          "value": "Content-Type, Authorization, X-Client-Id"
         }
       ]
     }
