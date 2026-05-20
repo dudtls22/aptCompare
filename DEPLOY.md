@@ -32,7 +32,7 @@ Settings → Build & Development Settings
 | Framework Preset | **Other** |
 | Root Directory | *(비움)* |
 | Build Command | *(비움)* — `vercel.json` 이 처리 |
-| Output Directory | *(비움)* — **`dist` 로 두면 404** |
+| Output Directory | *(비움)* — **`dist` / `public` 로 두면 API 404** |
 
 저장 후 **Redeploy**.
 
@@ -40,6 +40,9 @@ Settings → Build & Development Settings
 
 - https://apt-compare-beta.vercel.app/ → 화면
 - https://apt-compare-beta.vercel.app/api/health → `{"ok":true,...}`
+- https://apt-compare-beta.vercel.app/api/market → 환율·KB 시세 JSON
+
+`/api/market` 이 404면: Output Directory 가 `public` 이 아닌지 확인 후 **Redeploy**.
 
 ## GitHub Pages (선택)
 
