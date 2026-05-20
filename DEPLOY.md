@@ -57,6 +57,10 @@ git push origin main
 
 `/api/health` 가 Vercel HTML 404면 → Output Directory / Build Command 다시 확인 후 Redeploy.
 
+`api/market.js`, `api/proxy.js`, `api/health.js` 는 Vercel에서 `lib/` import 없이 동작하도록 작성되어 있습니다 (배포 시 모듈 누락 방지).
+
+실거래 조회가 `missing_service_key` 이면 Vercel에 **`DATA_GO_KR_SERVICE_KEY`** 환경 변수를 넣고 Redeploy 하세요.
+
 ---
 
 ## GitHub Pages (선택)

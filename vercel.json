@@ -3,29 +3,12 @@
   "buildCommand": "",
   "outputDirectory": "",
   "framework": null,
-  "version": 2,
-  "builds": [
-    {
-      "src": "api/**/*.js",
-      "use": "@vercel/node@3",
-      "config": {
-        "includeFiles": "lib/**"
-      }
-    },
-    {
-      "src": "index.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "css/**",
-      "use": "@vercel/static"
+  "functions": {
+    "api/**/*.js": {
+      "includeFiles": "lib/**",
+      "maxDuration": 30
     }
-  ],
-  "routes": [
-    { "src": "/api/(.*)", "dest": "/api/$1" },
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/index.html" }
-  ],
+  },
   "crons": [
     {
       "path": "/api/cron/daily-notify",

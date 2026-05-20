@@ -1,7 +1,11 @@
-import { setCorsHeaders } from "../lib/cors.mjs";
+function setCors(res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Client-Id");
+}
 
 export default function handler(req, res) {
-  setCorsHeaders(res);
+  setCors(res);
 
   if (req.method === "OPTIONS") {
     res.status(204).end();
@@ -13,9 +17,9 @@ export default function handler(req, res) {
     return;
   }
 
-  const port = Number(process.env.PORT) || 3333;
   res.status(200).json({
-    port,
-    apiBase: `http://127.0.0.1:${port}`
+    ok: true,
+    service: "aptCompare",
+    apiBase: ""
   });
 }

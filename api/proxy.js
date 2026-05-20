@@ -1,26 +1,41 @@
-import { buildDataGoKrQueryString } from "../lib/data-go-key.mjs";
-
 const UPSTREAM_BY_TARGET = {
-  "trade-dev": "https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev",
+  "trade-dev":
+    "https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev",
   trade: "https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade"
 };
 
-function setCorsHeaders(res) {
+function setCors(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Client-Id");
+}
+
+function buildDataGoKrQueryString(searchParams, serviceKey) {
+  const params = new URLSearchParams(searchParams);
+  const key = String(serviceKey || "").trim();
+  const rest = params.toString();
+  const isPercentEncoded = /%[0-9A-Fa-f]{2}/.test(key);
+  if (isPercentEncoded) {
+    return rest ? `serviceKey=${key}&${rest}` : `serviceKey=${key}`;
+  }
+  params.set("serviceKey", key);
+  return params.toString();
 }
 
 export default async function handler(req, res) {
-  setCorsHeaders(res);
+  setCors(res);
 
   if (req.method === "OPTIONS") {
     res.status(204).end();
     return;
   }
 
-  const serviceKey = (process.env.DATA_GO_KR_SERVICE_KEY || "").trim();
+  if (req.method !== "GET") {
+    res.status(405).json({ error: "method_not_allowed" });
+    return;
+  }
 
+  const serviceKey = (process.env.DATA_GO_KR_SERVICE_KEY || "").trim();
   if (!serviceKey) {
     res.status(500).json({
       error: "missing_service_key",

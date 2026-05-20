@@ -1,7 +1,3 @@
-import { setCorsHeaders } from "../lib/cors.mjs";
-import { getFavorites, setFavorites } from "../lib/favorites-store.mjs";
-import { getNotifyConfigStatus } from "../lib/notify-store.mjs";
-
 function readBody(req) {
   if (req.body && typeof req.body === "object") {
     return req.body;
@@ -25,6 +21,14 @@ function resolveClientId(req, body) {
 }
 
 export default async function handler(req, res) {
+  const { setCorsHeaders } = await import(new URL("../lib/cors.mjs", import.meta.url).href);
+  const { getFavorites, setFavorites } = await import(
+    new URL("../lib/favorites-store.mjs", import.meta.url).href
+  );
+  const { getNotifyConfigStatus } = await import(
+    new URL("../lib/notify-store.mjs", import.meta.url).href
+  );
+
   setCorsHeaders(res);
 
   if (req.method === "OPTIONS") {

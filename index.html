@@ -1269,15 +1269,26 @@
       return `${sign}${n.toFixed(2)}%`;
     }
 
-    async function refreshMarketTicker() {
-      try {
-        const res = await fetch(`${getApiProxyBase()}/api/market`, {
-          signal: AbortSignal.timeout(15000)
-        });
-        const data = await parseApiJsonResponse(res);
-        if (!res.ok) {
-          throw new Error(data?.message || data?.error || `HTTP ${res.status}`);
-        }
+    async function fetchMarketFxFromBrowser() {
+      const fxRes = await fetch("https://api.frankfurter.app/latest?from=USD&to=KRW", {
+        signal: AbortSignal.timeout(10000)
+      });
+      if (!fxRes.ok) {
+        throw new Error(`환율 직접 조회 HTTP ${fxRes.status}`);
+      }
+      const fxJson = await fxRes.json();
+      return {
+        updatedAt: new Date().toISOString(),
+        fx: {
+          rate: fxJson?.rates?.KRW ?? null,
+          date: fxJson?.date ?? null,
+          source: "frankfurter-browser"
+        },
+        kb: { price: null, name: "KB금융" }
+      };
+    }
+
+    function renderMarketTicker(data) {
         if (data?.fx?.rate != null) {
           const rate = Number(data.fx.rate);
           fxTickerEl.innerHTML =
@@ -1298,20 +1309,35 @@
         } else {
           kbTickerEl.innerHTML = `<strong>KB금융</strong> <span class="muted">조회 실패</span>`;
         }
+    }
+
+    async function refreshMarketTicker() {
+      try {
+        const res = await fetch(`${getApiProxyBase()}/api/market`, {
+          signal: AbortSignal.timeout(15000)
+        });
+        const data = await parseApiJsonResponse(res);
+        if (!res.ok) {
+          throw new Error(data?.message || data?.error || `HTTP ${res.status}`);
+        }
+        renderMarketTicker(data);
       } catch (err) {
+        try {
+          renderMarketTicker(await fetchMarketFxFromBrowser());
+          kbTickerEl.innerHTML =
+            `<strong>KB금융</strong> <span class="muted">서버 API 재배포 후 표시</span>`;
+          return;
+        } catch {
+          /* 브라우저 환율 폴백도 실패 */
+        }
         const msg = escapeHtml(err.message || "연결 실패");
-        const base = getApiProxyBase();
-        const apiHint = base
-          ? ` <span class="muted">(API: ${escapeHtml(base)})</span>`
-          : "";
-        const help =
-          base && String(err.message || "").includes("fetch")
-            ? '<br><span class="muted">터미널에서 npm start 실행 후 http://127.0.0.1:' +
-              LOCAL_API_PORTS_TRY[0] +
-              "/ 로 접속하세요.</span>"
-            : "";
+        const host = window.location.hostname;
+        const onVercel = host.endsWith(".vercel.app");
+        const help = onVercel
+          ? '<br><span class="muted">Vercel → Settings → Environment Variables 에 DATA_GO_KR_SERVICE_KEY 설정 후 Redeploy. /api/health 도 확인하세요.</span>'
+          : '<br><span class="muted">터미널에서 npm start 실행 후 접속하세요.</span>';
         fxTickerEl.innerHTML =
-          `<strong>USD/KRW</strong> <span class="muted">${msg}</span>${apiHint}${help}`;
+          `<strong>USD/KRW</strong> <span class="muted">${msg}</span>${help}`;
         kbTickerEl.innerHTML = `<strong>KB금융</strong> <span class="muted">API 확인 필요</span>`;
       }
     }
