@@ -15,7 +15,7 @@
           <h1>아파트 실거래가 월별 시세 변동</h1>
           <button type="button" class="btn-secondary btn-header-fav" id="openFavoritesBtn">즐겨찾기 보기</button>
         </div>
-        <p class="desc">공공데이터포털(국토교통부 아파트 매매 실거래자료) API 기반 월별 평균 거래금액 차트</p>
+        <p class="desc">국토교통부 아파트 매매 실거래자료 API 기반 데이터</p>
         <div id="marketTicker" class="market-ticker" aria-live="polite">
           <span class="market-ticker-item" id="fxTicker">
             <strong>USD/KRW</strong> <span class="muted">불러오는 중…</span>
@@ -28,8 +28,8 @@
     </div>
 
     <div class="card">
+      <p class="section-title section-title-above">공통 조회 조건</p>
       <div class="common-section">
-        <p class="section-title section-title-compact">공통 조회 조건</p>
         <div class="common-grid row-fields">
           <div class="field field-compact">
             <label for="regionSelect">시/도</label>
@@ -48,15 +48,11 @@
 
       <div class="compare-wrap">
         <div class="compare-card c1">
-          <div class="compare-card-head">
-            <p class="section-title section-title-compact">비교 1</p>
-            <div class="compare-card-actions">
-              <button type="button" class="btn-link" data-fav-pick-slot="1">찜에서 선택</button>
-            </div>
-          </div>
           <div class="compare-grid row-fields">
             <div class="field field-compact">
-              <label for="dongSelect1">동</label>
+              <div class="field-label-row">
+                <label for="dongSelect1">동</label>
+              </div>
               <select id="dongSelect1"><option value="">선택 안함</option></select>
             </div>
             <div class="field field-compact">
@@ -64,7 +60,10 @@
               <select id="aptSelect1"><option value="">선택 안함</option></select>
             </div>
             <div class="field field-compact">
-              <label for="areaSelect1">평형</label>
+              <div class="field-label-row field-label-row-right">
+                <label for="areaSelect1">평형</label>
+                <button type="button" class="btn-link btn-fav-pick" data-fav-pick-slot="1"><span class="btn-fav-pick-icon" aria-hidden="true">★</span><span class="btn-fav-pick-text">찜에서 선택</span></button>
+              </div>
               <select id="areaSelect1"><option value="">전체</option></select>
             </div>
           </div>
@@ -360,9 +359,9 @@
     let chart;
     const MAX_COMPARE_SLOTS = 3;
     const SLOT_THEME = {
-      1: { color: "#2563eb", cls: "c1" },
-      2: { color: "#ef4444", cls: "c2" },
-      3: { color: "#10b981", cls: "c3" }
+      1: { color: "#99d98c", cls: "c1" },
+      2: { color: "#52b69a", cls: "c2" },
+      3: { color: "#168aad", cls: "c3" }
     };
     let compareSlotsRoot = null;
     let addCompareSlotBtn = null;
@@ -423,15 +422,20 @@
             ' 삭제" title="삭제">×</button>'
           : "";
       card.innerHTML =
-        '<div class="compare-card-head"><p class="section-title section-title-compact">비교 ' + slotId + "</p>" +
-        '<div class="compare-card-actions">' +
-        '<button type="button" class="btn-link" data-fav-pick-slot="' + slotId + '">찜에서 선택</button>' +
-        removeBtn +
-        "</div></div>" +
         '<div class="compare-grid row-fields">' +
-        '<div class="field field-compact"><label for="dongSelect' + slotId + '">동</label><select id="dongSelect' + slotId + '"><option value="">선택 안함</option></select></div>' +
+        '<div class="field field-compact">' +
+        '<div class="field-label-row">' +
+        removeBtn +
+        '<label for="dongSelect' + slotId + '">동</label>' +
+        "</div>" +
+        '<select id="dongSelect' + slotId + '"><option value="">선택 안함</option></select></div>' +
         '<div class="field field-compact"><label for="aptSelect' + slotId + '">아파트</label><select id="aptSelect' + slotId + '"><option value="">선택 안함</option></select></div>' +
-        '<div class="field field-compact"><label for="areaSelect' + slotId + '">평형</label><select id="areaSelect' + slotId + '"><option value="">전체</option></select></div>' +
+        '<div class="field field-compact">' +
+        '<div class="field-label-row field-label-row-right">' +
+        '<label for="areaSelect' + slotId + '">평형</label>' +
+        '<button type="button" class="btn-link btn-fav-pick" data-fav-pick-slot="' + slotId + '"><span class="btn-fav-pick-icon" aria-hidden="true">★</span><span class="btn-fav-pick-text">찜에서 선택</span></button>' +
+        "</div>" +
+        '<select id="areaSelect' + slotId + '"><option value="">전체</option></select></div>' +
         "</div>";
       return {
         id: slotId,
@@ -480,12 +484,13 @@
 
       wrap.classList.add("compare-section");
 
-      if (!wrap.querySelector(".compare-section-title")) {
-        const title = document.createElement("p");
-        title.className = "section-title compare-section-title";
-        title.textContent = "비교 아파트";
-        wrap.insertBefore(title, wrap.firstChild);
+      let compareTitle = wrap.querySelector(".compare-section-title");
+      if (!compareTitle) {
+        compareTitle = document.createElement("p");
+        compareTitle.className = "section-title compare-section-title";
+        wrap.insertBefore(compareTitle, wrap.firstChild);
       }
+      compareTitle.textContent = "아파트 비교";
 
       let root = document.getElementById("compareSlotsRoot");
       if (!root) {
@@ -1700,9 +1705,13 @@
           ? '<span class="deal-cancel-badge">취소</span> '
           : "";
         const compareLabel = escapeHtml(formatDealTableCompareLabel(p));
+        const compareTextColor =
+          String(p.lineColor || "").toLowerCase() === String(SLOT_THEME[3].color).toLowerCase()
+            ? "#ffffff"
+            : "#111111";
         const compareCell =
           cancelPrefix +
-          `<span class="compare-tag compare-tag-deal" style="color:${p.lineColor}; border-color:${p.lineColor}; background:${p.lineColor}22;">${compareLabel}</span>`;
+          `<span class="compare-tag compare-tag-deal" style="color:${compareTextColor}; border-color:${p.lineColor}; background:${p.lineColor};">${compareLabel}</span>`;
         const priceCell = p.cancelled
           ? `<span class="deal-price-cancelled">${formatKrw(p.price)}</span>`
           : formatKrw(p.price);
