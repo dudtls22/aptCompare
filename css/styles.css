@@ -254,11 +254,6 @@ p.desc {
   display: none;
 }
 
-.compare-wrap > .compare-card.c2,
-.compare-wrap > .compare-card.c3 {
-  display: none !important;
-}
-
 .compare-card {
   border-radius: 8px;
   padding: 8px 10px;
@@ -275,16 +270,37 @@ p.desc {
 
 .compare-card.c3 {
   background: var(--tone-4);
+}
+
+.compare-card.c4 {
+  background: #1a759f;
+}
+
+.compare-card.c5 {
+  background: #1e6091;
+}
+
+.compare-card.c3,
+.compare-card.c4,
+.compare-card.c5 {
   color: #fff;
 }
 
 .compare-card.c3 .section-title,
 .compare-card.c3 label,
-.compare-card.c3 .btn-link {
+.compare-card.c3 .btn-link,
+.compare-card.c4 .section-title,
+.compare-card.c4 label,
+.compare-card.c4 .btn-link,
+.compare-card.c5 .section-title,
+.compare-card.c5 label,
+.compare-card.c5 .btn-link {
   color: #fff;
 }
 
-.compare-card.c3 .btn-link:hover {
+.compare-card.c3 .btn-link:hover,
+.compare-card.c4 .btn-link:hover,
+.compare-card.c5 .btn-link:hover {
   color: #f1f5f9;
 }
 
@@ -337,7 +353,9 @@ p.desc {
   pointer-events: none;
 }
 
-.compare-card.c3 .btn-fav-pick-icon {
+.compare-card.c3 .btn-fav-pick-icon,
+.compare-card.c4 .btn-fav-pick-icon,
+.compare-card.c5 .btn-fav-pick-icon {
   color: #fde68a;
 }
 
