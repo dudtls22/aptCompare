@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>2. 아파트 가격Gap분석</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/gap.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="page-header">
+        <div class="page-header-title-row">
+          <h1>2. 아파트 가격Gap분석</h1>
+          <div class="page-header-actions">
+            <button type="button" class="btn-secondary btn-header-fav" id="openGapFavoritesBtn">즐겨찾기 보기</button>
+            <button type="button" class="btn-app-menu" id="appMenuBtn" aria-label="메뉴 열기" aria-expanded="false" aria-controls="appMenuPanel">
+              <span class="menu-icon" aria-hidden="true"></span>
+            </button>
+            <div id="appMenuPanel" class="app-menu-panel" hidden>
+              <a href="index.html">1. 아파트 실거래 변동</a>
+              <a href="gap.html" class="active">2. 아파트 가격Gap분석</a>
+            </div>
+          </div>
+        </div>
+        <p class="desc">기준(보유) 1곳 · 매수 후보 최대 3곳 · 분기별 평균 실거래가 Gap 비교</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="section-title section-title-above">공통 조회 조건</p>
+      <div class="common-section">
+        <div class="common-grid row-fields gap-common-grid">
+          <div class="field field-compact">
+            <label for="regionSelect">시/도</label>
+            <select id="regionSelect"></select>
+          </div>
+          <div class="field field-compact">
+            <label for="gapMonths">조회기간</label>
+            <select id="gapMonths"></select>
+          </div>
+        </div>
+      </div>
+
+      <p class="section-title section-title-above">기준 아파트 (보유)</p>
+      <div class="compare-wrap gap-baseline-wrap">
+        <div class="compare-card c5" data-gap-role="baseline">
+          <div class="compare-grid row-fields gap-slot-grid">
+            <div class="field field-compact">
+              <div class="field-label-row gap-gu-label-row">
+                <button type="button" class="star-btn" data-gap-fav-star="base" title="즐겨찾기 추가/해제" aria-label="즐겨찾기">☆</button>
+                <label for="guSelectBase" id="districtLabelBase">구</label>
+              </div>
+              <select id="guSelectBase"></select>
+            </div>
+            <div class="field field-compact">
+              <div class="field-label-row">
+                <label for="dongSelectBase">동</label>
+              </div>
+              <select id="dongSelectBase"><option value="">선택 안함</option></select>
+            </div>
+            <div class="field field-compact">
+              <label for="aptSelectBase">아파트</label>
+              <select id="aptSelectBase"><option value="">선택 안함</option></select>
+            </div>
+            <div class="field field-compact field-area-col">
+              <div class="field-label-row field-label-row-right gap-area-label-row">
+                <label for="areaSelectBase">평형</label>
+                <span class="gap-fav-pick-wrap">
+                  <button type="button" class="btn-link btn-fav-pick" data-gap-fav-pick="base"><span class="btn-fav-pick-icon" aria-hidden="true">★</span><span class="btn-fav-pick-text">찜에서 선택</span></button>
+                </span>
+              </div>
+              <select id="areaSelectBase"><option value="">전체</option></select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p class="section-title section-title-above">매수 후보</p>
+      <div class="compare-wrap compare-section" id="gapCandWrap">
+        <div id="gapCandSlotsRoot" class="compare-slots-stack"></div>
+        <div class="compare-add-row">
+          <button type="button" id="addGapCandBtn" class="btn-secondary btn-add-compare">아파트 추가+</button>
+        </div>
+      </div>
+
+      <div class="field full">
+        <button type="button" id="gapAnalyzeBtn">Gap 분석 실행</button>
+        <div id="gapMessage" class="message-compact">시/도 선택 후 기준·후보1의 시군구·동·아파트를 고르세요. [아파트 추가+]로 후보를 더 추가합니다.</div>
+      </div>
+    </div>
+
+    <div class="card gap-chart-card">
+      <p class="section-title section-title-compact">분기별 평균 실거래가·차액</p>
+      <div id="gapLegend" class="gap-legend"></div>
+      <canvas id="gapChart" height="200"></canvas>
+
+      <p class="section-title section-title-compact" style="margin-top:14px;">분기별 Gap 표</p>
+      <div class="gap-table-wrap">
+        <table class="gap-table">
+          <thead id="gapTableHead">
+            <tr>
+              <th>분기</th>
+              <th>기준 아파트 (평균)</th>
+              <th>비교 (차액)</th>
+            </tr>
+          </thead>
+          <tbody id="gapTableBody">
+            <tr class="empty-row"><td colspan="4">분석 실행 후 표가 표시됩니다.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="gapFavoritesModal" aria-hidden="true">
+    <div class="modal-panel" role="dialog" aria-labelledby="gapFavoritesModalTitle">
+      <div class="modal-head">
+        <h2 id="gapFavoritesModalTitle">즐겨찾기</h2>
+        <button type="button" class="modal-close" id="closeGapFavoritesModal" aria-label="닫기">×</button>
+      </div>
+      <div class="modal-body" id="gapFavoritesModalBody"></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="gapSlotFavModal" aria-hidden="true">
+    <div class="modal-panel" role="dialog" aria-labelledby="gapSlotFavModalTitle">
+      <div class="modal-head">
+        <h2 id="gapSlotFavModalTitle">즐겨찾기에서 선택</h2>
+        <button type="button" class="modal-close" id="closeGapSlotFavModal" aria-label="닫기">×</button>
+      </div>
+      <div class="modal-body" id="gapSlotFavModalBody"></div>
+    </div>
+  </div>
+
+  <script src="data/korea-districts.js"></script>
+  <script src="js/app-state.js"></script>
+  <script src="js/app-menu.js"></script>
+  <script src="js/gap-mock-data.js"></script>
+  <script src="js/gap-api.js"></script>
+  <script src="js/gap-favorites.js"></script>
+  <script src="js/gap-app.js"></script>
+</body>
+</html>

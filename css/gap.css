@@ -1,0 +1,315 @@
+/* 앱 공통 · 햄버거 메뉴 */
+
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.btn-secondary.btn-header-fav {
+  margin: 0;
+}
+
+.btn-app-menu {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 28px;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--primary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.menu-icon {
+  display: block;
+  width: 14px;
+  height: 2px;
+  background: currentColor;
+  border-radius: 1px;
+  box-shadow: 0 -5px 0 currentColor, 0 5px 0 currentColor;
+}
+
+.app-menu-panel {
+  position: absolute;
+  top: calc(100% + 2px);
+  right: 0;
+  z-index: 200;
+  min-width: 168px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
+  overflow: hidden;
+}
+
+.app-menu-panel a {
+  display: block;
+  padding: 11px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 1px solid #eef2f0;
+}
+
+.app-menu-panel a:last-child {
+  border-bottom: none;
+}
+
+.app-menu-panel a:hover {
+  background: #f3f6f4;
+}
+
+.app-menu-panel a.active {
+  color: var(--primary);
+  background: #e6eef5;
+}
+
+/* 가격 Gap 분석 화면 */
+
+.gap-common-grid.row-fields {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.gap-slot-grid.row-fields {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.35fr);
+  align-items: end;
+}
+
+.gap-slot-grid .field-area-col {
+  min-width: 0;
+}
+
+.gap-slot-grid .gap-area-label-row {
+  gap: 4px;
+}
+
+.gap-gu-label-row {
+  gap: 2px;
+}
+
+.gap-gu-label-row .star-btn {
+  margin: 0;
+  flex-shrink: 0;
+  min-width: 0;
+  width: 22px;
+  min-height: 20px;
+  padding: 0;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.gap-gu-label-row label {
+  margin: 0;
+}
+
+.gap-fav-pick-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.gap-fav-pick-wrap .btn-fav-pick {
+  flex-shrink: 0;
+}
+
+.gap-gu-label-row .btn-slot-remove {
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.gap-table .gap-th-cand,
+.gap-table .gap-td-cand {
+  line-height: 1.2;
+  vertical-align: bottom;
+}
+
+.gap-table .gap-th-cand {
+  white-space: normal;
+}
+
+.gap-table .gap-td-cand {
+  white-space: nowrap;
+}
+
+.gap-table .gap-th-cand-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  font-size: 11px;
+  font-weight: 700;
+  max-width: 76px;
+  margin: 0 auto;
+}
+
+.gap-table .gap-th-apt {
+  display: block;
+  max-width: 76px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.gap-table .gap-th-gap-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.9;
+  white-space: nowrap;
+  line-height: 1.1;
+}
+
+.gap-table .gap-th-baseline,
+.gap-table .gap-td-baseline,
+.gap-table .gap-td-cand {
+  white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+  .gap-slot-grid.row-fields {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .gap-slot-grid .field-area-col {
+    grid-column: 1 / -1;
+  }
+}
+
+.gap-baseline-wrap {
+  margin-bottom: 4px;
+}
+
+.gap-chart-card {
+  margin-top: 8px;
+}
+
+#gapChart {
+  min-height: 240px;
+  max-height: 48vh;
+  width: 100% !important;
+}
+
+.gap-table-wrap {
+  overflow-x: auto;
+  margin-top: 12px;
+}
+
+.gap-table {
+  width: max-content;
+  max-width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  table-layout: auto;
+}
+
+.gap-table th,
+.gap-table td {
+  border-bottom: 1px solid var(--border);
+  padding: 5px 6px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.gap-table .gap-th-cand,
+.gap-table .gap-td-cand,
+.gap-table .gap-th-baseline,
+.gap-table .gap-td-baseline {
+  width: auto;
+  min-width: max-content;
+}
+
+.gap-table .gap-th-quarter,
+.gap-table .gap-td-quarter {
+  text-align: left;
+  position: sticky;
+  left: 0;
+  background: #f9fafb;
+  z-index: 1;
+  font-weight: 600;
+}
+
+.gap-table .gap-th-baseline,
+.gap-table .gap-td-baseline {
+  font-weight: 700;
+}
+
+.gap-table th {
+  font-weight: 700;
+  vertical-align: bottom;
+}
+
+.gap-table .gap-td-cand.gap-positive {
+  color: #b91c1c !important;
+  font-weight: 700;
+}
+
+.gap-table .gap-td-cand.gap-negative {
+  color: #1d4ed8 !important;
+  font-weight: 700;
+}
+
+/* 비교3 등 어두운 배경(#168aad) — 밝은 차액 색 */
+.gap-table .gap-td-cand.gap-gap-on-dark.gap-positive {
+  color: #fecaca !important;
+}
+
+.gap-table .gap-td-cand.gap-gap-on-dark.gap-negative {
+  color: #bfdbfe !important;
+}
+
+.gap-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin: 8px 0 4px;
+  font-size: 11px;
+}
+
+.gap-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.gap-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.gap-legend-bar {
+  width: 10px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+#gapMessage.error {
+  color: var(--danger);
+}
+
+.gap-mock-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 4px;
+  background: #fef3c7;
+  color: #92400e;
+}
