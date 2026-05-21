@@ -15,7 +15,6 @@
         <div class="page-header-title-row">
           <h1>2. 아파트 가격Gap분석</h1>
           <div class="page-header-actions">
-            <button type="button" class="btn-secondary btn-header-fav" id="openGapFavoritesBtn">즐겨찾기 보기</button>
             <button type="button" class="btn-app-menu" id="appMenuBtn" aria-label="메뉴 열기" aria-expanded="false" aria-controls="appMenuPanel">
               <span class="menu-icon" aria-hidden="true"></span>
             </button>
@@ -87,6 +86,7 @@
       </div>
 
       <div class="field full">
+        <p id="gapRestoreHint" class="restore-hint" hidden>기존 조회 했던 입력값 자동 셋팅 중</p>
         <button type="button" id="gapAnalyzeBtn">Gap 분석 실행</button>
         <div id="gapMessage" class="message-compact">시/도 선택 후 기준·후보1의 시군구·동·아파트를 고르세요. [아파트 추가+]로 후보를 더 추가합니다.</div>
       </div>

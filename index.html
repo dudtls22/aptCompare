@@ -15,7 +15,6 @@
         <div class="page-header-title-row">
           <h1>1. 아파트 실거래 변동</h1>
           <div class="page-header-actions">
-            <button type="button" class="btn-secondary btn-header-fav" id="openFavoritesBtn">즐겨찾기 보기</button>
             <button type="button" class="btn-app-menu" id="appMenuBtn" aria-label="메뉴 열기" aria-expanded="false" aria-controls="appMenuPanel">
               <span class="menu-icon" aria-hidden="true"></span>
             </button>
@@ -82,6 +81,7 @@
       </div>
 
       <div class="field full">
+        <p id="indexRestoreHint" class="restore-hint" hidden>기존 조회 했던 입력값 자동 셋팅 중</p>
         <button id="loadBtn">차트 조회</button>
         <div id="message" class="message-compact">동·아파트·평형 선택 후 [아파트 추가+]로 최대 5건 비교</div>
       </div>
@@ -1824,6 +1824,9 @@
         const guNameResolved = getCurrentGuName() || "선택 지역";
         const selectedLabels = conditions.map((c) => c.label).join(" | ");
         setMessage(`${guNameResolved} / ${selectedLabels} 완료: ${months}개월 조회, 총 거래 ${totalDeals.toLocaleString("ko-KR")}건`);
+        if (window.IndexStatePersist?.persistIndexNow) {
+          IndexStatePersist.persistIndexNow(() => slots);
+        }
       } catch (err) {
         const errText = String(err.message);
         const isUnauthorized = errText.includes("HTTP 401") || errText.includes("HTTP 403");
@@ -2023,19 +2026,6 @@
         .catch(() => renderDealTable());
     });
 
-    document.getElementById("openFavoritesBtn").addEventListener("click", async (e) => {
-      openAppModal(favoritesModal, e.currentTarget);
-      try {
-        await renderManageFavoritesModal();
-        const closeBtn = document.getElementById("closeFavoritesModal");
-        if (closeBtn instanceof HTMLElement) {
-          closeBtn.focus();
-        }
-      } catch (err) {
-        setMessage(`즐겨찾기 불러오기 실패: ${err.message}`, true);
-      }
-    });
-
     document.getElementById("closeFavoritesModal").addEventListener("click", () => {
       closeAppModal(favoritesModal);
     });
@@ -2113,29 +2103,52 @@
       initCompareSlots();
       compareSlotsRoot = document.getElementById("compareSlotsRoot");
       addCompareSlotBtn = document.getElementById("addCompareSlotBtn");
-      try {
-        await loadDongOptionsByDistrict(guSelect.value);
-      } catch (err) {
-        renderDongLoading("동 목록을 불러오지 못했습니다");
-        setMessage(`동 목록 조회 실패: ${err.message}`, true);
-      }
+      const indexRestoreHint = document.getElementById("indexRestoreHint");
+      const setIndexRestoreUi = (active) => {
+        if (indexRestoreHint) indexRestoreHint.hidden = !active;
+        loadBtn.disabled = active;
+      };
 
-      if (window.IndexStatePersist) {
-        IndexStatePersist.bindIndexPersistence(() => slots);
-        await IndexStatePersist.restoreIndexState({
-          setupDistrictSelect: (region, gu) => setupDistrictSelect(region, gu),
-          loadDongOptionsByDistrict: (lawd) => loadDongOptionsByDistrict(lawd),
-          loadAptAreaForSlot,
-          ensureSlotCount: async (slotRows) => {
-            const maxId = Math.max(
-              0,
-              ...(slotRows || []).map((r) => Number(r.id) || 0)
-            );
-            while (slots.length < maxId && slots.length < MAX_COMPARE_SLOTS) {
-              addCompareSlot({ syncDong: false });
+      let indexRestored = false;
+      const shouldRestoreIndex =
+        window.IndexStatePersist?.hasIndexCache?.() ?? false;
+      if (shouldRestoreIndex) setIndexRestoreUi(true);
+
+      try {
+        if (window.IndexStatePersist) {
+          IndexStatePersist.bindIndexPersistence(() => slots);
+          indexRestored = await IndexStatePersist.restoreIndexState({
+            setupDistrictSelect: (region, gu) => setupDistrictSelect(region, gu),
+            loadDongOptionsByDistrict: (lawd) => loadDongOptionsByDistrict(lawd),
+            loadAptAreaForSlot,
+            setDongForSlot: (slotId, dongName) => {
+              const slot = slots.find((s) => s.id === Number(slotId));
+              if (slot?.dongEl && dongName) {
+                setSelectValueProgrammatic(slot.dongEl, dongName);
+              }
+            },
+            ensureSlotCount: async (slotRows) => {
+              const rows = (slotRows || []).filter(
+                (r) => r && (r.dong || r.apt || r.area)
+              );
+              const maxId = Math.max(1, 0, ...rows.map((r) => Number(r.id) || 0));
+              while (slots.length < maxId && slots.length < MAX_COMPARE_SLOTS) {
+                addCompareSlot({ syncDong: false });
+              }
             }
+          });
+        }
+
+        if (!indexRestored) {
+          try {
+            await loadDongOptionsByDistrict(guSelect.value);
+          } catch (err) {
+            renderDongLoading("동 목록을 불러오지 못했습니다");
+            setMessage(`동 목록 조회 실패: ${err.message}`, true);
           }
-        });
+        }
+      } finally {
+        setIndexRestoreUi(false);
       }
 
       loadMoreBtn.addEventListener("click", () => {

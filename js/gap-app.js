@@ -24,6 +24,7 @@
   const monthsSelect = document.getElementById("gapMonths");
   const messageEl = document.getElementById("gapMessage");
   const analyzeBtn = document.getElementById("gapAnalyzeBtn");
+  const gapRestoreHint = document.getElementById("gapRestoreHint");
   const addCandBtn = document.getElementById("addGapCandBtn");
   const candSlotsRoot = document.getElementById("gapCandSlotsRoot");
   const legendEl = document.getElementById("gapLegend");
@@ -595,6 +596,31 @@
     return out;
   }
 
+  function hasSavedSlotValues(row) {
+    return !!(row && (row.gu || row.dong || row.apt || row.area));
+  }
+
+  async function restoreCandidatesFromSaved(savedCandidates) {
+    const rows = (savedCandidates || [])
+      .filter(hasSavedSlotValues)
+      .sort((a, b) => (Number(a.id) || 0) - (Number(b.id) || 0));
+    if (!rows.length) return;
+
+    const maxId = Math.min(
+      MAX_CAND_SLOTS,
+      Math.max(1, ...rows.map((r) => Number(r.id) || 1))
+    );
+    while (candSlots.length < maxId) {
+      if (!addCandSlot()) break;
+    }
+
+    for (const row of rows) {
+      const slot = candSlots.find((s) => s.id === Number(row.id));
+      if (slot) await fillSlotFromSaved(slot, row);
+    }
+    updateAddCandButton();
+  }
+
   async function restoreGapState() {
     const raw = loadGapCache();
     const saved = migrateLegacySaved(raw);
@@ -610,7 +636,7 @@
     }
 
     await fillSlotFromSaved(baseline, saved.baseline);
-    /* 매수 후보는 즐겨찾기 DB·캐시에서 자동 복원하지 않음 — 사용자가 [아파트 추가+]로 직접 추가 */
+    await restoreCandidatesFromSaved(saved.candidates);
     return true;
   }
 
@@ -926,6 +952,7 @@
       renderLegend(analysis.series);
       renderChart(analysis);
       renderTable(analysis);
+      saveGapState();
       const suffix = analysis.isMock ? " (Mock)" : "";
       setMessage(`Gap 분석 완료 (${analysis.quarters.length}개 분기)${suffix}`);
     } catch (err) {
@@ -959,6 +986,24 @@
     });
 
     analyzeBtn.addEventListener("click", runAnalysis);
+
+    window.addEventListener("pagehide", () => saveGapState());
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") saveGapState();
+    });
+  }
+
+  function setGapRestoreUi(active) {
+    if (gapRestoreHint) gapRestoreHint.hidden = !active;
+    if (analyzeBtn) analyzeBtn.disabled = active;
+  }
+
+  function hasGapCacheToRestore() {
+    const saved = migrateLegacySaved(loadGapCache());
+    if (!saved) return false;
+    if (saved.region || saved.months) return true;
+    if (hasSavedSlotValues(saved.baseline)) return true;
+    return (saved.candidates || []).some(hasSavedSlotValues);
   }
 
   async function boot() {
@@ -982,10 +1027,18 @@
       addCandSlot();
     }
 
-    const restored = await restoreGapState();
-    if (!restored) {
-      await refreshSlotDongIfGu(baseline);
+    const shouldRestoreGap = hasGapCacheToRestore();
+    if (shouldRestoreGap) setGapRestoreUi(true);
+
+    try {
+      const restored = await restoreGapState();
+      if (!restored) {
+        await refreshSlotDongIfGu(baseline);
+      }
+    } finally {
+      setGapRestoreUi(false);
     }
+
     saveGapState();
     await updateAllStarButtons();
   }
