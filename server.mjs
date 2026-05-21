@@ -5,6 +5,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { getMarketData } from "./lib/market.mjs";
 import { getFavorites, setFavorites } from "./lib/favorites-store.mjs";
+import { getGapFavorites, setGapFavorites } from "./lib/gap-favorites-store.mjs";
 import {
   getNotifyConfigStatus,
   getSubscriptions,
@@ -242,6 +243,68 @@ async function handleApiRoute(req, res, u, apiPath) {
       } catch (err) {
         sendJson(res, 500, {
           error: "favorites_failed",
+          message: err instanceof Error ? err.message : String(err)
+        });
+      }
+      return true;
+    }
+
+    sendJson(res, 405, { error: "method_not_allowed" });
+    return true;
+  }
+
+  if (apiPath === "/api/gap-favorites") {
+    const clientId =
+      u.searchParams.get("clientId") ||
+      String(req.headers["x-client-id"] || "").trim();
+
+    if (req.method === "GET") {
+      if (!clientId) {
+        sendJson(res, 400, {
+          error: "missing_client_id",
+          message: "clientId 쿼리 또는 X-Client-Id 헤더가 필요합니다."
+        });
+        return true;
+      }
+      try {
+        const result = await getGapFavorites(clientId);
+        sendJson(res, 200, {
+          clientId,
+          favorites: result.favorites,
+          store: result
+        });
+      } catch (err) {
+        sendJson(res, 500, {
+          error: "gap_favorites_failed",
+          message: err instanceof Error ? err.message : String(err)
+        });
+      }
+      return true;
+    }
+
+    if (req.method === "POST" || req.method === "PUT") {
+      try {
+        const raw = await readRequestBody(req);
+        const body = raw ? JSON.parse(raw) : {};
+        const id = String(body?.clientId || clientId || "").trim();
+        const list = Array.isArray(body?.favorites) ? body.favorites : null;
+        if (!id || !list) {
+          sendJson(res, 400, {
+            error: "invalid_body",
+            message: '{ "clientId": "...", "favorites": [...] } 형식이 필요합니다.'
+          });
+          return true;
+        }
+        const result = await setGapFavorites(id, list);
+        sendJson(res, 200, {
+          ok: true,
+          clientId: id,
+          favorites: result.favorites,
+          store: result
+        });
+      } catch (err) {
+        sendJson(res, 500, {
+          error: "gap_favorites_failed",
           message: err instanceof Error ? err.message : String(err)
         });
       }
