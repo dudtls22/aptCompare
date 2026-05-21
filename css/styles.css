@@ -191,7 +191,7 @@ p.desc {
 }
 
 .common-section {
-  background: var(--tone-1);
+  background: #f3f4f6;
   border: none;
   border-radius: 8px;
   padding: 8px 10px;

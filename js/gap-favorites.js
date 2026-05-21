@@ -310,24 +310,10 @@
   function bindModals(handlers) {
     const manageModal = document.getElementById("gapFavoritesModal");
     const pickModal = document.getElementById("gapSlotFavModal");
-    const openBtn = document.getElementById("openGapFavoritesBtn");
     const closeManage = document.getElementById("closeGapFavoritesModal");
     const closePick = document.getElementById("closeGapSlotFavModal");
     const manageBody = document.getElementById("gapFavoritesModalBody");
     const pickBody = document.getElementById("gapSlotFavModalBody");
-
-    openBtn?.addEventListener("click", async (e) => {
-      openAppModal(manageModal, e.currentTarget);
-      try {
-        await renderManageModal();
-        const closeBtn = document.getElementById("closeGapFavoritesModal");
-        if (closeBtn instanceof HTMLElement) {
-          closeBtn.focus();
-        }
-      } catch (err) {
-        onMessage(`즐겨찾기 불러오기 실패: ${err.message}`, true);
-      }
-    });
 
     closeManage?.addEventListener("click", () => closeAppModal(manageModal));
     closePick?.addEventListener("click", () => closeAppModal(pickModal));

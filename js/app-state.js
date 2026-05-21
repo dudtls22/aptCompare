@@ -1,8 +1,9 @@
 /**
- * 화면 간 이동 시 입력값 유지 (sessionStorage)
+ * 화면 간·재접속 시 조회 조건 유지 (sessionStorage + localStorage)
  */
 (function (global) {
   const KEY_INDEX = "aptCompare.index.v1";
+  const KEY_INDEX_CACHE = "aptCompare.index.cache.v1";
   const KEY_GAP = "aptCompare.gap.v1";
   const KEY_GAP_CACHE = "aptCompare.gap.cache.v1";
 
@@ -58,6 +59,26 @@
     };
   }
 
+  function loadIndexCache() {
+    const fromSession = load(KEY_INDEX);
+    if (fromSession) return fromSession;
+    try {
+      const raw = localStorage.getItem(KEY_INDEX_CACHE);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function saveIndexCache(data) {
+    save(KEY_INDEX, data);
+    try {
+      localStorage.setItem(KEY_INDEX_CACHE, JSON.stringify(data));
+    } catch {
+      /* ignore quota */
+    }
+  }
+
   function loadGapCache() {
     const fromSession = load(KEY_GAP);
     if (fromSession) return fromSession;
@@ -80,8 +101,11 @@
 
   global.AppStatePersist = {
     KEY_INDEX,
+    KEY_INDEX_CACHE,
     KEY_GAP,
     KEY_GAP_CACHE,
+    loadIndexCache,
+    saveIndexCache,
     loadGapCache,
     saveGapCache,
     save,
