@@ -701,7 +701,11 @@
       const itemDong = getDongName(item);
       if (!itemDong) return false;
       if (isSameDong(itemDong, dongName)) return true;
-      return normalizeDongName(itemDong) === normalizeDongName(dongName);
+      const normItem = normalizeDongName(itemDong);
+      const normSel = normalizeDongName(dongName);
+      if (normItem === normSel) return true;
+      if (normSel && normItem.endsWith(normSel)) return true;
+      return false;
     }
 
     function getAptName(item) {
@@ -932,6 +936,46 @@
           });
       }
       return monthDataPromiseCache[key];
+    }
+
+    function dedupeTradeItems(items) {
+      const seen = new Set();
+      const out = [];
+      for (const it of items) {
+        const key = [
+          getDealDateLabel(it, ""),
+          getAptName(it),
+          getDongName(it),
+          String(it?.dealAmount ?? ""),
+          String(it?.floor ?? it?.flrNo ?? "")
+        ].join("\0");
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push(it);
+      }
+      return out;
+    }
+
+    /** 강원(51↔42) 등 구·신 LAWD_CD 병행 조회 후 한 달치 병합 */
+    async function fetchOneMonthMerged(lawdCd, ymParam) {
+      const codes = lawdApiCodesForQuery(lawdCd);
+      let merged = [];
+      const errors = [];
+      for (const code of codes) {
+        try {
+          const items = await fetchOneMonthCached({ lawdCd: code, ymParam });
+          if (Array.isArray(items) && items.length) merged = merged.concat(items);
+        } catch (err) {
+          errors.push(err);
+        }
+      }
+      if (!merged.length) {
+        if (errors.length) {
+          throw errors[0] instanceof Error ? errors[0] : new Error(String(errors[0]));
+        }
+        return [];
+      }
+      return dedupeTradeItems(merged);
     }
 
     function collectDealPoints(monthlyRows, condition) {
@@ -1806,12 +1850,12 @@
 
       try {
         const targetMonths = buildTargetMonths(months);
-        const monthlyRows = (await Promise.all(
+        const monthlyRows = await Promise.all(
           targetMonths.map(async (m) => ({
             ym: m.ym,
-            items: await fetchOneMonthCached({ lawdCd, ymParam: m.ymParam })
+            items: await fetchOneMonthMerged(lawdCd, m.ymParam)
           }))
-        ));
+        );
 
         const { labels, datasets } = buildComparisonDatasets(monthlyRows, conditions);
         drawChart(labels, datasets);
