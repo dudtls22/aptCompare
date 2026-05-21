@@ -23,18 +23,10 @@
     return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}`;
   }
 
+  const RD = () => global.RegionDong;
+
   function lawdApiCodesForQuery(lawdCd) {
-    const c = String(lawdCd || "").trim();
-    if (!c || c.length !== 5) return c ? [c] : [];
-    const out = [c];
-    for (const [nw, old] of [
-      ["51", "42"],
-      ["52", "45"]
-    ]) {
-      if (c.startsWith(nw)) out.push(old + c.slice(2));
-      if (c.startsWith(old)) out.push(nw + c.slice(2));
-    }
-    return [...new Set(out)];
+    return RD()?.lawdApiCodesForQuery(lawdCd) ?? [String(lawdCd || "").trim()].filter(Boolean);
   }
 
   async function probeSameOriginApi() {
@@ -99,29 +91,12 @@
     guSelect.value = pick;
   }
 
-  function normalizeDongName(name) {
-    return String(name || "").replaceAll(" ", "").trim();
-  }
-
-  function dongCoreName(name) {
-    const n = normalizeDongName(name);
-    if (!n) return "";
-    if (n.endsWith("동")) return n.slice(0, -1);
-    return n;
-  }
-
   function isSameDong(itemDong, selected) {
-    const a = normalizeDongName(itemDong);
-    const b = normalizeDongName(selected);
-    if (!a || !b) return false;
-    if (a === b) return true;
-    return dongCoreName(a) === dongCoreName(b) && Boolean(dongCoreName(a));
+    return RD()?.isSameDong(itemDong, selected) ?? false;
   }
 
   function getDongName(item) {
-    return String(
-      item?.umdNm ?? item?.UMD_NM ?? item?.umd_nm ?? item?.dong ?? item?.DONG ?? ""
-    ).trim();
+    return RD()?.getTradeDongRaw(item) ?? "";
   }
 
   function getAptName(item) {
@@ -241,14 +216,16 @@
     const key = String(lawdCd || "");
     if (!dongOptionsPromiseCache[key]) {
       dongOptionsPromiseCache[key] = (async () => {
-        const months = buildTargetMonths(24);
-        const items = await fetchTradeItemsForLawdMonths(lawdCd, months);
-        const set = new Set();
-        for (const it of items) {
-          const d = getDongName(it);
-          if (d) set.add(d);
+        const staticDongs = RD()?.getStaticDongList(lawdCd) ?? [];
+        let apiDongs = [];
+        try {
+          const months = buildTargetMonths(24);
+          const items = await fetchTradeItemsForLawdMonths(lawdCd, months);
+          apiDongs = RD()?.collectDongsFromTradeItems(items) ?? [];
+        } catch (e) {
+          if (!staticDongs.length) throw e;
         }
-        return [...set].sort((a, b) => a.localeCompare(b, "ko"));
+        return RD()?.mergeDongLists(staticDongs, apiDongs) ?? [];
       })().catch((e) => {
         delete dongOptionsPromiseCache[key];
         throw e;

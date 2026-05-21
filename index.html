@@ -139,6 +139,7 @@
   </div>
 
   <script src="data/korea-districts.js"></script>
+  <script src="js/region-dong.js"></script>
   <script src="js/app-state.js"></script>
   <script src="js/app-index-state.js"></script>
   <script src="js/app-menu.js"></script>
@@ -252,34 +253,6 @@
     const DISTRICT_OPTIONS_BY_REGION = window.KOREA_DISTRICT_OPTIONS_BY_REGION || {};
     const DEFAULT_LAWD_BY_REGION = window.KOREA_DEFAULT_LAWD_BY_REGION || {};
     const LAWD_PREFIX_TO_REGION = window.KOREA_LAWD_PREFIX_TO_REGION || {};
-    const SEOUL_DONGS_BY_GU = {
-      "11110": ["청운동", "신교동", "궁정동", "효자동", "삼청동", "부암동", "평창동", "무악동", "사직동", "창신동"],
-      "11140": ["소공동", "회현동", "명동", "필동", "장충동", "광희동", "을지로동", "신당동", "다산동", "약수동"],
-      "11170": ["후암동", "용산동", "남영동", "청파동", "원효로동", "효창동", "용문동", "이촌동", "이태원동", "한남동"],
-      "11200": ["왕십리동", "마장동", "사근동", "행당동", "응봉동", "금호동", "옥수동", "성수동", "송정동", "용답동"],
-      "11215": ["중곡동", "능동", "구의동", "광장동", "자양동", "화양동", "군자동"],
-      "11230": ["용신동", "제기동", "청량리동", "회기동", "휘경동", "이문동", "장안동"],
-      "11260": ["면목동", "상봉동", "중화동", "묵동", "망우동", "신내동"],
-      "11290": ["성북동", "삼선동", "동선동", "돈암동", "안암동", "보문동", "정릉동", "길음동", "종암동", "장위동"],
-      "11305": ["삼양동", "미아동", "송중동", "송천동", "삼각산동", "번동", "수유동", "우이동", "인수동"],
-      "11320": ["쌍문동", "방학동", "창동", "도봉동"],
-      "11350": ["월계동", "공릉동", "하계동", "중계동", "상계동"],
-      "11380": ["녹번동", "불광동", "갈현동", "구산동", "대조동", "응암동", "역촌동", "신사동", "증산동", "수색동"],
-      "11410": ["충현동", "천연동", "북아현동", "신촌동", "연희동", "홍제동", "홍은동", "남가좌동", "북가좌동"],
-      "11440": ["아현동", "공덕동", "도화동", "용강동", "대흥동", "염리동", "신수동", "서강동", "서교동", "합정동"],
-      "11470": ["목동", "신월동", "신정동"],
-      "11500": ["염창동", "등촌동", "화곡동", "우장산동", "가양동", "발산동", "공항동", "방화동", "마곡동"],
-      "11530": ["신도림동", "구로동", "가리봉동", "고척동", "개봉동", "오류동", "천왕동", "항동"],
-      "11545": ["가산동", "독산동", "시흥동"],
-      "11560": ["영등포동", "여의동", "당산동", "도림동", "문래동", "양평동", "신길동", "대림동"],
-      "11590": ["노량진동", "상도동", "흑석동", "사당동", "대방동", "신대방동"],
-      "11620": ["봉천동", "신림동", "남현동"],
-      "11650": ["서초동", "잠원동", "반포동", "방배동", "양재동", "내곡동", "염곡동", "우면동", "원지동"],
-      "11680": ["역삼동", "개포동", "청담동", "삼성동", "대치동", "신사동", "논현동", "압구정동", "세곡동", "자곡동"],
-      "11710": ["잠실동", "신천동", "풍납동", "송파동", "석촌동", "삼전동", "가락동", "문정동", "장지동", "위례동"],
-      "11740": ["강일동", "상일동", "명일동", "고덕동", "암사동", "천호동", "성내동", "길동", "둔촌동"]
-    };
-
     /* ========================================================================
        DOM 참조 · 캐시 · 앱 상태
        ======================================================================== */
@@ -352,20 +325,11 @@
       return 1;
     }
 
-    /** 공공데이터 API 조회용 LAWD_CD (강원 42↔51 등 구·신 코드 병행) */
+    const RD = () => window.RegionDong;
+
+    /** 공공데이터 API 조회용 LAWD_CD (강원 42↔51, 전북 45↔52 등 구·신 코드 병행) */
     function lawdApiCodesForQuery(lawdCd) {
-      const c = String(lawdCd || "").trim();
-      if (!c || c.length !== 5) return c ? [c] : [];
-      const out = [c];
-      const prefixPairs = [
-        ["51", "42"],
-        ["52", "45"]
-      ];
-      for (const [nw, old] of prefixPairs) {
-        if (c.startsWith(nw)) out.push(old + c.slice(2));
-        if (c.startsWith(old)) out.push(nw + c.slice(2));
-      }
-      return [...new Set(out)];
+      return RD()?.lawdApiCodesForQuery(lawdCd) ?? [String(lawdCd || "").trim()].filter(Boolean);
     }
 
     /** UI 시군구 목록에 있는 코드로 변환 (구법정동 42→51 등) */
@@ -663,25 +627,11 @@
     }
 
     function isSameDong(itemDongName, selectedDongName) {
-      const a = normalizeDongName(itemDongName);
-      const b = normalizeDongName(selectedDongName);
-      if (!a || !b) return false;
-      if (a === b) return true;
-      const aCore = dongCoreName(a);
-      const bCore = dongCoreName(b);
-      return Boolean(aCore) && aCore === bCore;
+      return RD()?.isSameDong(itemDongName, selectedDongName) ?? false;
     }
 
     function getDongName(item) {
-      return String(
-        item?.umdNm ??
-        item?.UMD_NM ??
-        item?.umd_nm ??
-        item?.dong ??
-        item?.DONG ??
-        item?.법정동 ??
-        ""
-      ).trim();
+      return RD()?.getTradeDongRaw(item) ?? "";
     }
 
     function setSelectValueProgrammatic(selectEl, value) {
@@ -700,12 +650,7 @@
       if (!dongName) return true;
       const itemDong = getDongName(item);
       if (!itemDong) return false;
-      if (isSameDong(itemDong, dongName)) return true;
-      const normItem = normalizeDongName(itemDong);
-      const normSel = normalizeDongName(dongName);
-      if (normItem === normSel) return true;
-      if (normSel && normItem.endsWith(normSel)) return true;
-      return false;
+      return isSameDong(itemDong, dongName);
     }
 
     function getAptName(item) {
@@ -1015,7 +960,7 @@
     }
 
     function getStaticDongOptions(lawdCd) {
-      return Array.isArray(SEOUL_DONGS_BY_GU[lawdCd]) ? SEOUL_DONGS_BY_GU[lawdCd] : [];
+      return RD()?.getStaticDongList(lawdCd) ?? [];
     }
 
     function forEachDongSelect(onSelect) {
@@ -1063,20 +1008,19 @@
     }
 
     async function getDongOptionsByDistrict(lawdCd) {
-      const fixedDongs = getStaticDongOptions(lawdCd);
-      if (fixedDongs.length) return fixedDongs;
-
       const key = String(lawdCd || "");
       if (!dongOptionsPromiseCache[key]) {
         dongOptionsPromiseCache[key] = (async () => {
-          const targetMonths = buildTargetMonths(24);
-          const items = await fetchTradeItemsForLawdMonths(lawdCd, targetMonths);
-          const dongSet = new Set();
-          for (const item of items) {
-            const dongName = getDongName(item);
-            if (dongName) dongSet.add(dongName);
+          const staticDongs = getStaticDongOptions(lawdCd);
+          let apiDongs = [];
+          try {
+            const targetMonths = buildTargetMonths(24);
+            const items = await fetchTradeItemsForLawdMonths(lawdCd, targetMonths);
+            apiDongs = RD()?.collectDongsFromTradeItems(items) ?? [];
+          } catch (err) {
+            if (!staticDongs.length) throw err;
           }
-          return sortStringsKoAsc(Array.from(dongSet));
+          return RD()?.mergeDongLists(staticDongs, apiDongs) ?? sortStringsKoAsc(staticDongs);
         })().catch((err) => {
           delete dongOptionsPromiseCache[key];
           throw err;
@@ -1551,10 +1495,11 @@
     function resolvePickToDongOption(rawDong, fixedDongs) {
       const d = String(rawDong || "").trim();
       if (!d) return "";
-      if (fixedDongs.includes(d)) return d;
-      const key = normalizeDongName(d);
+      const pick = RD()?.extractDongLabel(d) || d;
+      if (fixedDongs.includes(pick)) return pick;
+      const key = normalizeDongName(pick);
       const found = fixedDongs.find((x) => normalizeDongName(x) === key);
-      return found || d;
+      return found || pick;
     }
 
     function resolvePickToAptOption(rawApt, aptNames) {
