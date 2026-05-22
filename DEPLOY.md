@@ -64,11 +64,16 @@ git push origin main
 **아파트정보 요약(세대수)** 가 `-` 로만 나오면:
 
 1. [공공데이터포털](https://www.data.go.kr) → 마이페이지 → **오픈API 활용신청** 에서 아래가 **승인** 상태인지 확인  
-   - 국토교통부_**공동주택 기본 정보제공 서비스** (V4)  
-   - 국토교통부_**공동주택 단지 목록제공 서비스** (단지코드 조회용)  
-2. 각 API 상세에서 **사용할 인증키**(일반/개인)가 Vercel·`.env` 의 `DATA_GO_KR_SERVICE_KEY` 와 **같은 키**로 연결돼 있는지 확인  
-3. Vercel **Redeploy** 후 다시 조회  
-4. 로컬 진단: `node scripts/test-apt-basis.mjs` → `Basis V4` 가 `403` 이면 아직 키 연동 미완료
+   - 국토교통부_**공동주택 기본 정보제공 서비스** ([15058747](https://www.data.go.kr/data/15058747/openapi.do) · `getAphusBassInfo` · `totHhldCnt` / `kaptdaCnt`)  
+   - 국토교통부_**건축물대장 표제부 조회** ([15044713](https://www.data.go.kr/data/15044713/openapi.do) · `hhldCnt` · 실거래 상세 지번 연동)  
+   - (선택) 국토교통부_**공동주택 단지 목록제공 서비스** — `kaptCode` 자동 조회용 (500 오류 시 lookup 파일 사용)  
+2. 각 API 상세에서 **사용할 인증키**가 Vercel·`.env` 의 `DATA_GO_KR_SERVICE_KEY` 와 **같은 키**로 연결돼 있는지 확인  
+3. 실거래는 **상세(trade-dev)** API 사용 — 지번(`bonbun`/`umdCd`)·`aptSeq` 가 있어야 건축물대장·lookup 이 동작합니다.  
+4. Vercel **Redeploy** (`vercel.json` → `lib/**`, `data/**` 포함)  
+5. 로컬 진단:  
+   - `node scripts/test-kapt.mjs` — K-apt 기본정보  
+   - `node scripts/test-building.mjs` — 건축물대장 + 통합 enrich  
+6. **단지목록 API HTTP 500** 시: `data/kapt-lookup.json` 또는 `node scripts/import-kapt-csv.mjs path/to/list.csv`
 
 ---
 

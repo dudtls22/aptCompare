@@ -32,6 +32,86 @@
     return aptBasisApiBasePromise;
   }
 
+  let clientLookupPromise = null;
+
+  function getStaticAssetBase() {
+    const p = String(global.location?.pathname || "/");
+    const m = p.match(/^(\/[^/]+)\//);
+    if (m) return m[1];
+    if (p === "/aptCompare" || p.startsWith("/aptCompare/")) return "/aptCompare";
+    return "";
+  }
+
+  async function loadClientKaptLookup() {
+    if (!clientLookupPromise) {
+      clientLookupPromise = (async () => {
+        const base = getStaticAssetBase();
+        const url = `${base}/data/kapt-lookup.json`.replace(/\/{2,}/g, "/");
+        try {
+          const res = await fetch(url, { cache: "no-store" });
+          if (!res.ok) return { byAptSeq: {}, byKey: {} };
+          const raw = await res.json();
+          return {
+            byAptSeq: raw?.byAptSeq && typeof raw.byAptSeq === "object" ? raw.byAptSeq : {},
+            byKey: raw?.byKey && typeof raw.byKey === "object" ? raw.byKey : {}
+          };
+        } catch {
+          return { byAptSeq: {}, byKey: {} };
+        }
+      })();
+    }
+    return clientLookupPromise;
+  }
+
+  function resolveKaptCodeFromClientLookup(data, cond) {
+    const explicit = String(cond?.kaptCode || "").trim();
+    if (explicit) return explicit;
+
+    const aptSeq = String(cond?.aptSeq || "").trim();
+    if (aptSeq && data.byAptSeq[aptSeq]) return String(data.byAptSeq[aptSeq]).trim();
+
+    const lawd = String(cond?.lawdCd || "").trim();
+    const apt = String(cond?.apt || "").trim();
+    const dong = String(cond?.dong || "").trim();
+    const bjd = String(cond?.bjdCode || "").trim().slice(0, 10);
+    const napt = normalizeAptName(apt);
+    const ndong = normalizeDongName(dong);
+
+    const candidates = [
+      `${lawd}::${apt}::${dong}`,
+      `${lawd}::${apt}`,
+      `${bjd}::${apt}`,
+      `${lawd}::${napt}::${ndong}`,
+      `${lawd}::${napt}`,
+      `${bjd}::${napt}`,
+      napt
+    ];
+    for (const key of candidates) {
+      if (key && data.byKey[key]) return String(data.byKey[key]).trim();
+    }
+
+    if (!napt) return "";
+
+    for (const [key, code] of Object.entries(data.byKey)) {
+      const parts = key.split("::");
+      const namePart = normalizeAptName(parts[parts.length - 1]);
+      if (namePart !== napt) continue;
+      if (lawd && !key.startsWith(`${lawd}::`) && !key.startsWith(`${bjd}::`)) continue;
+      if (ndong && parts.length >= 3) {
+        const dongPart = normalizeDongName(parts[parts.length - 2]);
+        if (dongPart && dongPart !== ndong && !ndong.includes(dongPart) && !dongPart.includes(ndong)) {
+          continue;
+        }
+      }
+      return String(code).trim();
+    }
+    return "";
+  }
+
+  function normalizeAptName(name) {
+    return String(name || "").replaceAll(" ", "").trim();
+  }
+
   function normalizeDongName(name) {
     return String(name || "").replaceAll(" ", "").trim();
   }
@@ -118,6 +198,29 @@
     }
     const lawd = String(cond?.lawdCd || "").trim();
     return lawd.length === 5 ? lawd : "";
+  }
+
+  /** 실거래(상세) 지번 → 건축물대장 표제부 조회용 */
+  function pickParcel(items, cond) {
+    for (const it of items) {
+      if (!itemMatchesCondition(it, cond)) continue;
+      const sigunguCd = String(it?.sggCd ?? it?.SGG_CD ?? cond?.lawdCd ?? "")
+        .trim()
+        .slice(0, 5);
+      const umd = String(it?.umdCd ?? it?.UMD_CD ?? "").trim();
+      const bon = it?.bonbun ?? it?.BONBUN ?? it?.jibun ?? it?.JIBUN ?? "";
+      const bu = it?.bubun ?? it?.BUBUN ?? "0";
+      if (sigunguCd.length !== 5 || !umd || bon === "" || bon == null) continue;
+      const landCd = String(it?.landCd ?? it?.LAND_CD ?? "0").trim();
+      return {
+        sigunguCd,
+        bjdongCd: String(umd).padStart(5, "0").slice(0, 5),
+        platGbCd: landCd === "1" ? "1" : "0",
+        bun: String(bon).replace(/\D/g, "").padStart(4, "0").slice(-4),
+        ji: String(bu).replace(/\D/g, "").padStart(4, "0").slice(-4)
+      };
+    }
+    return null;
   }
 
   function formatCompletionFromBasis(basis) {
@@ -242,7 +345,8 @@
         apt: cond.apt || "",
         area: cond.area || "",
         aptSeq: pickAptSeq(items, cond),
-        bjdCode: pickBjdCode(items, cond)
+        bjdCode: pickBjdCode(items, cond),
+        parcel: pickParcel(items, cond)
       };
     });
   }
@@ -256,11 +360,15 @@
       if (!basis) return row;
       const completion = formatCompletionFromBasis(basis) || row.completion;
       const hh =
+        basis.totHhldCnt ??
+        basis.TOT_HHLD_CNT ??
         basis.kaptdaCnt ??
         basis.KAPTDA_CNT ??
         basis.kaptDaCnt ??
+        basis.hoCnt ??
+        basis.HO_CNT ??
         basis.hhldCnt ??
-        basis.totHhldCnt;
+        basis.HHLD_CNT;
       const households = hh != null ? formatHouseholds(hh) : row.households;
       return { ...row, completion, households };
     });
@@ -308,6 +416,7 @@
   async function fetchBasisEnrichment(rows) {
     const base = await getAptBasisApiBase();
     const url = `${base}/api/apt-basis`;
+    const lookup = await loadClientKaptLookup();
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -317,7 +426,9 @@
           dong: r.dong,
           apt: r.apt,
           aptSeq: r.aptSeq,
-          bjdCode: r.bjdCode
+          bjdCode: r.bjdCode,
+          kaptCode: resolveKaptCodeFromClientLookup(lookup, r),
+          parcel: r.parcel || null
         }))
       })
     });
@@ -354,16 +465,20 @@
     renderAptSummaryTable(tbodyEl, rows);
     updateAptSummaryHint(hintEl, "");
     try {
-      const { byKey, hint } = await fetchBasisEnrichment(rows);
+      const { byKey, hint, errors } = await fetchBasisEnrichment(rows);
       if (byKey && Object.keys(byKey).length) {
         const merged = mergeBasisIntoRows(rows, byKey);
         renderAptSummaryTable(tbodyEl, merged);
-        if (rowsMissingHouseholds(merged) && hint) {
-          updateAptSummaryHint(hintEl, hint);
+        if (rowsMissingHouseholds(merged)) {
+          const errText = errors?.length ? errors.slice(0, 2).join(" · ") : "";
+          const msg = [hint, errText].filter(Boolean).join(" ");
+          if (msg) updateAptSummaryHint(hintEl, msg);
         }
         return merged;
       }
-      if (hint) updateAptSummaryHint(hintEl, hint);
+      const errText = errors?.length ? errors.slice(0, 2).join(" · ") : "";
+      const msg = [hint, errText].filter(Boolean).join(" ");
+      if (msg) updateAptSummaryHint(hintEl, msg);
     } catch (err) {
       updateAptSummaryHint(
         hintEl,
@@ -377,8 +492,9 @@
     const base = String(baseLabel || "").trim() || "-";
     const type = String(areaType || "").trim();
     if (!type) return base;
-    if (base.includes(type)) return base;
-    return `${base} ${type}`;
+    const suffix = type.startsWith("-") ? type : `-${type}`;
+    if (base.includes(suffix) || base.endsWith(type)) return base;
+    return `${base} ${suffix}`;
   }
 
   global.APT_SUMMARY = {

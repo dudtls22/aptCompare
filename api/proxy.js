@@ -63,6 +63,16 @@ export default async function handler(req, res) {
     const upstreamRes = await fetch(upstreamUrl);
     const text = await upstreamRes.text();
 
+    if (upstreamRes.status === 403) {
+      res.status(403).json({
+        error: "upstream_forbidden",
+        message:
+          "국토교통부 API가 인증키를 거부했습니다(403). Vercel DATA_GO_KR_SERVICE_KEY 와 '아파트매매 실거래' 활용신청을 확인하세요.",
+        upstreamPreview: text.slice(0, 200)
+      });
+      return;
+    }
+
     res.status(upstreamRes.status);
     res.setHeader(
       "Content-Type",

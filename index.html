@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>1. 아파트 실거래 변동</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23233d4d'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-size='14' fill='%23fcca46' font-family='sans-serif'%3E%E3%84%8D%3C/text%3E%3C/svg%3E" />
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/gap.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -165,8 +166,8 @@
        API · 프록시
        ======================================================================== */
     const API_PROXY_ROUTES = [
-      { target: "trade", label: "운영" },
-      { target: "trade-dev", label: "개발" }
+      { target: "trade-dev", label: "상세" },
+      { target: "trade", label: "일반" }
     ];
     const VERCEL_API_PROXY_BASE = "https://apt-compare-beta.vercel.app";
     const LOCAL_API_PORTS_TRY = [3333, 3000];
@@ -865,9 +866,21 @@
                     "Vercel 환경변수 DATA_GO_KR_SERVICE_KEY 가 없습니다. Settings → Environment Variables 에 추가 후 Redeploy 하세요."
                 );
               }
+              if (errBody?.error === "upstream_forbidden" || res.status === 403) {
+                throw new Error(
+                  errBody?.message ||
+                    "국토교통부 API 인증 거부(403). data.go.kr → 마이페이지 → 인증키(Encoding) 복사 → .env DATA_GO_KR_SERVICE_KEY 갱신 → npm start 재시작. '아파트매매 실거래' 활용신청 승인도 확인하세요."
+                );
+              }
               if (errBody?.message) detail = `: ${errBody.message}`;
             } catch (parseErr) {
-              if (parseErr?.message?.includes("DATA_GO_KR")) throw parseErr;
+              if (
+                parseErr?.message?.includes("DATA_GO_KR") ||
+                parseErr?.message?.includes("인증") ||
+                parseErr?.message?.includes("403")
+              ) {
+                throw parseErr;
+              }
             }
             throw new Error(`HTTP ${res.status} (${route.label} 프록시)${detail}`);
           }

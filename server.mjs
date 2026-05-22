@@ -171,9 +171,15 @@ async function handleApiRoute(req, res, u, apiPath) {
   }
 
   if (apiPath === "/api/config" && req.method === "GET") {
+    const sk = SERVICE_KEY;
     sendJson(res, 200, {
       port: PORT,
-      apiBase: `http://127.0.0.1:${PORT}`
+      apiBase: `http://127.0.0.1:${PORT}`,
+      serviceKey: {
+        present: Boolean(sk),
+        length: sk.length,
+        looksUrlEncoded: /%[0-9A-Fa-f]{2}/.test(sk)
+      }
     });
     return true;
   }
@@ -440,8 +446,18 @@ function proxyToApi(res, u) {
       r.on("data", (c) => chunks.push(c));
       r.on("end", () => {
         const body = Buffer.concat(chunks);
+        const status = r.statusCode || 502;
+        if (status === 403) {
+          sendJson(res, 403, {
+            error: "upstream_forbidden",
+            message:
+              "국토교통부 API가 인증키를 거부했습니다(403). 공공데이터포털 마이페이지에서 '아파트매매 실거래' API 승인 여부와 인증키(Encoding 권장)를 확인한 뒤 .env 의 DATA_GO_KR_SERVICE_KEY 를 갱신하고 npm start 를 다시 실행하세요.",
+            upstreamPreview: body.toString("utf8").slice(0, 200)
+          });
+          return;
+        }
         const rawCt = r.headers["content-type"] || "application/json";
-        res.writeHead(r.statusCode || 502, { "Content-Type": rawCt });
+        res.writeHead(status, { "Content-Type": rawCt });
         res.end(body);
       });
     })
@@ -481,6 +497,12 @@ http
         error: "api_not_found",
         message: `${apiPath} API를 찾을 수 없습니다. server.mjs 저장 후 npm start 를 다시 실행했는지 확인하세요.`
       });
+      return;
+    }
+
+    if (u.pathname === "/favicon.ico") {
+      res.writeHead(204);
+      res.end();
       return;
     }
 

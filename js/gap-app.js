@@ -6,6 +6,7 @@
   const MOCK = window.GAP_MOCK;
   const P = window.AppStatePersist;
   const FAV = window.GAP_FAV;
+  const APT_SUM = window.APT_SUMMARY;
 
   const MAX_CAND_SLOTS = 3;
   /** 1번 화면 SLOT_THEME 과 동일 순서: 1·2·3=후보, 5=기준 */
@@ -30,6 +31,8 @@
   const legendEl = document.getElementById("gapLegend");
   const tableHead = document.getElementById("gapTableHead");
   const tableBody = document.getElementById("gapTableBody");
+  const gapAptSummaryBody = document.getElementById("gapAptSummaryBody");
+  const gapAptSummaryHint = document.getElementById("gapAptSummaryHint");
 
   const baseline = {
     role: "baseline",
@@ -203,12 +206,16 @@
     }
   }
 
-  function buildSlotLabel(slot) {
+  function buildSlotLabel(slot, areaType) {
     const apt = slot.aptEl?.value?.trim();
     const area = slot.areaEl?.value?.trim();
     const guName = getGuName(slot);
     const parts = [apt, area ? `${area}㎡` : "", guName].filter(Boolean);
-    if (parts.length) return parts.join(" ");
+    let label = parts.length ? parts.join(" ") : "";
+    if (label && areaType && APT_SUM) {
+      label = APT_SUM.appendAreaTypeToCompareLabel(label, areaType);
+    }
+    if (label) return label;
     return slot.role === "baseline" ? "기준" : `후보${slot.id}`;
   }
 
@@ -714,34 +721,88 @@
     const quarters = API.buildQuarterLabels(monthCount);
 
     if (useMock && MOCK) {
-      return MOCK.buildMockGapAnalysis(
-        { label: baselineRow.label },
-        candidates.map((c) => ({ label: c.label }))
+      const mock = MOCK.buildMockGapAnalysis(
+        { label: baselineRow.label, aptName: baselineRow.apt },
+        candidates.map((c) => ({ label: c.label, aptName: c.apt }))
       );
+      mock.summaryConditions = [
+        {
+          lawdCd: baselineRow.lawdCd,
+          dong: baselineRow.dong,
+          apt: baselineRow.apt,
+          area: baselineRow.area
+        },
+        ...candidates.map((c) => ({
+          lawdCd: c.lawdCd,
+          dong: c.dong,
+          apt: c.apt,
+          area: c.area
+        }))
+      ];
+      mock.allItems = [];
+      return mock;
     }
 
     const months = API.buildTargetMonths(monthCount);
     const baseItems = await API.fetchTradeItemsForLawdMonths(baselineRow.lawdCd, months);
     const baseMap = API.aggregateQuarterlyAverage(baseItems, baselineRow);
+    let allItems = [...baseItems];
+    const candPayloads = [];
+
+    for (let i = 0; i < candidates.length; i++) {
+      const c = candidates[i];
+      const items = await API.fetchTradeItemsForLawdMonths(c.lawdCd, months);
+      allItems = allItems.concat(items);
+      candPayloads.push({ c, items });
+    }
+
+    const planIndex = APT_SUM ? APT_SUM.buildFloorPlanIndex(allItems) : null;
+    const baselineCond = {
+      lawdCd: baselineRow.lawdCd,
+      dong: baselineRow.dong,
+      apt: baselineRow.apt,
+      area: baselineRow.area
+    };
+    const baselineAreaType =
+      planIndex && APT_SUM
+        ? APT_SUM.resolveFloorPlanType(
+            planIndex,
+            baselineRow.apt,
+            baselineRow.area,
+            allItems,
+            baselineCond
+          )
+        : "";
 
     const series = [
       {
         id: "baseline",
-        label: baselineRow.label,
+        label: buildSlotLabel(baseline, baselineAreaType),
         aptName: baselineRow.apt,
+        areaType: baselineAreaType,
         color: getSlotSeriesColor("baseline"),
         role: "baseline",
         byQuarter: baseMap
       }
     ];
 
-    for (let i = 0; i < candidates.length; i++) {
-      const c = candidates[i];
-      const items = await API.fetchTradeItemsForLawdMonths(c.lawdCd, months);
+    for (const { c, items } of candPayloads) {
+      const slot = candSlots.find((s) => s.id === c.id);
+      const candCond = {
+        lawdCd: c.lawdCd,
+        dong: c.dong,
+        apt: c.apt,
+        area: c.area
+      };
+      const areaType =
+        planIndex && APT_SUM
+          ? APT_SUM.resolveFloorPlanType(planIndex, c.apt, c.area, allItems, candCond)
+          : "";
       series.push({
         id: "cand" + c.id,
-        label: c.label,
+        label: slot ? buildSlotLabel(slot, areaType) : c.label,
         aptName: c.apt,
+        areaType,
         color: getSlotSeriesColor("candidate", c.id),
         role: "candidate",
         byQuarter: API.aggregateQuarterlyAverage(items, c)
@@ -758,11 +819,33 @@
       return { quarter: qk, basePrice, cells };
     });
 
-    return { quarters, series, rows, isMock: false };
+    const summaryConditions = [
+      {
+        lawdCd: baselineRow.lawdCd,
+        dong: baselineRow.dong,
+        apt: baselineRow.apt,
+        area: baselineRow.area
+      },
+      ...candidates.map((c) => ({
+        lawdCd: c.lawdCd,
+        dong: c.dong,
+        apt: c.apt,
+        area: c.area
+      }))
+    ];
+
+    return { quarters, series, rows, allItems, summaryConditions, isMock: false };
+  }
+
+  function aptDisplayName(s) {
+    const apt = String(s.aptName || "").trim();
+    const type = String(s.areaType || "").trim();
+    if (!apt) return "";
+    return type && APT_SUM ? APT_SUM.appendAreaTypeToCompareLabel(apt, type) : apt;
   }
 
   function legendNameForSeries(s) {
-    const apt = String(s.aptName || "").trim();
+    const apt = aptDisplayName(s);
     if (s.role === "baseline") {
       return apt ? `${apt} (기준)` : "기준";
     }
@@ -902,7 +985,9 @@
     const baseFg = textColorOnBg(baseBg);
 
     const baseApt = escapeHtml(
-      String(baselineSeries?.aptName || "아파트명").trim() || "아파트명"
+      aptDisplayName(baselineSeries) ||
+        String(baselineSeries?.aptName || "아파트명").trim() ||
+        "아파트명"
     );
     let head =
       `<tr><th class="gap-th-quarter">분기</th>` +
@@ -912,7 +997,7 @@
     candSeries.forEach((s) => {
       const bg = s.color;
       const fg = textColorOnBg(bg);
-      const apt = escapeHtml(String(s.aptName || "비교").trim() || "비교");
+      const apt = escapeHtml(aptDisplayName(s) || String(s.aptName || "비교").trim() || "비교");
       head +=
         `<th class="gap-th-cand" style="background:${bg};color:${fg}" title="${apt}">` +
         `<span class="gap-th-cand-inner"><span class="gap-th-apt">${apt}</span>` +
@@ -976,6 +1061,14 @@
       renderLegend(analysis.series);
       renderChart(analysis);
       renderTable(analysis);
+      if (APT_SUM && gapAptSummaryBody && analysis.summaryConditions?.length) {
+        void APT_SUM.renderAptSummaryWithEnrichment(
+          gapAptSummaryBody,
+          analysis.summaryConditions,
+          analysis.allItems || [],
+          gapAptSummaryHint
+        );
+      }
       saveGapState();
       const suffix = analysis.isMock ? " (Mock)" : "";
       setMessage(`Gap 분석 완료 (${analysis.quarters.length}개 분기)${suffix}`);

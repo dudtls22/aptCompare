@@ -28,6 +28,8 @@ jobs:
           mkdir -p site
           cp index.html site/
           cp -r css site/
+          cp -r js site/
+          cp -r data site/
 
       - uses: actions/upload-pages-artifact@v3
         with:
