@@ -1,12 +1,12 @@
 /**
- * Gap 화면 전용 즐겨찾기 (1번 화면 DB와 분리)
+ * Gap 화면 전용 즐겨찾기 (1번 화면과 DB 분리, 브라우저 무관 전역 목록)
  */
 (function (global) {
-  const CLIENT_ID_KEY = "aptCompareGapClientId";
   const MIRROR_KEY = "aptCompareGapFavoritesMirror";
   const API_PATH = "/api/gap-favorites";
 
   let onMessage = () => {};
+  let lastStoreMeta = { storage: "", warning: "" };
 
   function escapeHtml(str) {
     return String(str ?? "")
@@ -42,16 +42,26 @@
     return area ? `${base}|${area}` : base;
   }
 
-  function getClientId() {
-    let id = localStorage.getItem(CLIENT_ID_KEY);
-    if (!id) {
-      id =
-        typeof crypto !== "undefined" && crypto.randomUUID
-          ? crypto.randomUUID()
-          : `gap-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-      localStorage.setItem(CLIENT_ID_KEY, id);
+  function updateStoreMeta(store) {
+    if (!store || typeof store !== "object") return;
+    lastStoreMeta = {
+      storage: String(store.storage || ""),
+      warning: String(store.warning || "")
+    };
+  }
+
+  function storageStatusHtml() {
+    const { storage, warning } = lastStoreMeta;
+    if (storage === "upstash") {
+      return '<p class="hint fav-storage-ok">저장: Redis(Upstash) — 모든 브라우저·기기에서 동일한 Gap 찜 목록을 사용합니다.</p>';
     }
-    return id;
+    if (warning) {
+      return `<p class="hint fav-storage-warn">저장: ${escapeHtml(storage || "로컬")} — ${escapeHtml(warning)}</p>`;
+    }
+    if (storage === "browser-mirror") {
+      return '<p class="hint fav-storage-warn">저장: 이 브라우저에만 보관 중입니다. API/Redis 연결을 확인하세요.</p>';
+    }
+    return "";
   }
 
   function readMirror() {
@@ -81,16 +91,9 @@
   }
 
   async function readFavorites() {
-    const clientId = getClientId();
     try {
       const base = await getApiBase();
-      const res = await fetch(
-        `${base}${API_PATH}?clientId=${encodeURIComponent(clientId)}`,
-        {
-          headers: { "X-Client-Id": clientId },
-          cache: "no-store"
-        }
-      );
+      const res = await fetch(`${base}${API_PATH}`, { cache: "no-store" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new Error(data?.message || `HTTP ${res.status}`);
@@ -98,6 +101,7 @@
       let loaded = Array.isArray(data?.favorites)
         ? data.favorites.map(normalizeFavorite)
         : [];
+      updateStoreMeta(data?.store);
       if (data?.store?.warning) {
         console.warn("[gap-favorites]", data.store.warning);
       }
@@ -130,17 +134,13 @@
 
   async function persistFavorites(list, options = {}) {
     const normalized = list.map(normalizeFavorite).filter((f) => f.lawdCd && f.apt);
-    const clientId = getClientId();
     try {
       const base = await getApiBase();
       const res = await fetch(`${base}${API_PATH}`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Client-Id": clientId
-        },
+        headers: { "Content-Type": "application/json" },
         cache: "no-store",
-        body: JSON.stringify({ clientId, favorites: normalized })
+        body: JSON.stringify({ favorites: normalized })
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -150,8 +150,13 @@
         ? data.favorites.map(normalizeFavorite)
         : normalized;
       writeMirror(favorites);
-      if (data?.store?.warning && !options.silent) {
-        onMessage(data.store.warning, true);
+      updateStoreMeta(data?.store);
+      if (!options.silent) {
+        if (data?.store?.warning) {
+          onMessage(data.store.warning, true);
+        } else if (data?.store?.storage === "upstash") {
+          onMessage("Gap 즐겨찾기가 저장되었습니다. (모든 브라우저 공통)");
+        }
       }
       return { ...data, favorites };
     } catch (err) {
@@ -223,6 +228,7 @@
       return;
     }
     const hint =
+      storageStatusHtml() +
       '<p class="hint notify-hint">Gap 분석 전용 즐겨찾기입니다. 「1. 아파트 실거래 변동」 화면 찜과 별도로 저장됩니다.</p>';
     if (!list.length) {
       body.innerHTML = hint + '<p class="fav-empty">즐겨찾기된 아파트가 없습니다.</p>';
@@ -409,7 +415,6 @@
     isFavorite,
     openPickModal,
     renderManageModal,
-    closeAppModal,
-    getClientId
+    closeAppModal
   };
 })(typeof window !== "undefined" ? window : globalThis);

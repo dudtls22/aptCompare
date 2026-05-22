@@ -190,22 +190,10 @@ async function handleApiRoute(req, res, u, apiPath) {
   }
 
   if (apiPath === "/api/favorites") {
-    const clientId =
-      u.searchParams.get("clientId") ||
-      String(req.headers["x-client-id"] || "").trim();
-
     if (req.method === "GET") {
-      if (!clientId) {
-        sendJson(res, 400, {
-          error: "missing_client_id",
-          message: "clientId 쿼리 또는 X-Client-Id 헤더가 필요합니다."
-        });
-        return true;
-      }
       try {
-        const result = await getFavorites(clientId);
+        const result = await getFavorites();
         sendJson(res, 200, {
-          clientId,
           favorites: result.favorites,
           store: result,
           config: getNotifyConfigStatus()
@@ -223,19 +211,17 @@ async function handleApiRoute(req, res, u, apiPath) {
       try {
         const raw = await readRequestBody(req);
         const body = raw ? JSON.parse(raw) : {};
-        const id = String(body?.clientId || clientId || "").trim();
         const list = Array.isArray(body?.favorites) ? body.favorites : null;
-        if (!id || !list) {
+        if (!list) {
           sendJson(res, 400, {
             error: "invalid_body",
-            message: '{ "clientId": "...", "favorites": [...] } 형식이 필요합니다.'
+            message: '{ "favorites": [...] } 형식이 필요합니다.'
           });
           return true;
         }
-        const result = await setFavorites(id, list);
+        const result = await setFavorites(list);
         sendJson(res, 200, {
           ok: true,
-          clientId: id,
           favorites: result.favorites,
           store: result,
           config: getNotifyConfigStatus()
@@ -254,22 +240,10 @@ async function handleApiRoute(req, res, u, apiPath) {
   }
 
   if (apiPath === "/api/gap-favorites") {
-    const clientId =
-      u.searchParams.get("clientId") ||
-      String(req.headers["x-client-id"] || "").trim();
-
     if (req.method === "GET") {
-      if (!clientId) {
-        sendJson(res, 400, {
-          error: "missing_client_id",
-          message: "clientId 쿼리 또는 X-Client-Id 헤더가 필요합니다."
-        });
-        return true;
-      }
       try {
-        const result = await getGapFavorites(clientId);
+        const result = await getGapFavorites();
         sendJson(res, 200, {
-          clientId,
           favorites: result.favorites,
           store: result
         });
@@ -286,19 +260,17 @@ async function handleApiRoute(req, res, u, apiPath) {
       try {
         const raw = await readRequestBody(req);
         const body = raw ? JSON.parse(raw) : {};
-        const id = String(body?.clientId || clientId || "").trim();
         const list = Array.isArray(body?.favorites) ? body.favorites : null;
-        if (!id || !list) {
+        if (!list) {
           sendJson(res, 400, {
             error: "invalid_body",
-            message: '{ "clientId": "...", "favorites": [...] } 형식이 필요합니다.'
+            message: '{ "favorites": [...] } 형식이 필요합니다.'
           });
           return true;
         }
-        const result = await setGapFavorites(id, list);
+        const result = await setGapFavorites(list);
         sendJson(res, 200, {
           ok: true,
-          clientId: id,
           favorites: result.favorites,
           store: result
         });

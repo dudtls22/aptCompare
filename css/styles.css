@@ -836,6 +836,63 @@ button:disabled {
   border-color: #bfdbfe;
 }
 
+.fav-sync-panel {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: #f9fafb;
+}
+
+.fav-sync-lead {
+  margin: 0 0 8px;
+}
+
+.fav-sync-foot {
+  margin: 8px 0 0;
+  font-size: 12px;
+}
+
+.fav-sync-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.fav-sync-label {
+  flex: 0 0 100%;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.fav-sync-input {
+  flex: 1 1 180px;
+  min-width: 0;
+  font-size: 13px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.btn-compact {
+  padding: 8px 12px;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.fav-storage-ok {
+  color: #047857;
+  margin: 0 0 8px;
+}
+
+.fav-storage-warn {
+  color: #b45309;
+  margin: 0 0 8px;
+}
+
 /* --- 모달 (중앙 팝업) --- */
 .modal-overlay {
   position: fixed;

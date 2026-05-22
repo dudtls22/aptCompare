@@ -12,14 +12,6 @@ function readBody(req) {
   return null;
 }
 
-function resolveClientId(req, body) {
-  const url = new URL(req.url || "/", `https://${req.headers.host || "localhost"}`);
-  const fromQuery = url.searchParams.get("clientId");
-  const fromHeader = req.headers["x-client-id"];
-  const fromBody = body?.clientId;
-  return String(fromQuery || fromHeader || fromBody || "").trim();
-}
-
 export default async function handler(req, res) {
   const { setCorsHeaders } = await import(new URL("../lib/cors.mjs", import.meta.url).href);
   const { getGapFavorites, setGapFavorites } = await import(
@@ -34,20 +26,11 @@ export default async function handler(req, res) {
   }
 
   const body = req.method === "GET" ? null : readBody(req);
-  const clientId = resolveClientId(req, body);
-  if (!clientId) {
-    res.status(400).json({
-      error: "missing_client_id",
-      message: "clientId 쿼리, X-Client-Id 헤더, 또는 body.clientId 가 필요합니다."
-    });
-    return;
-  }
 
   try {
     if (req.method === "GET") {
-      const result = await getGapFavorites(clientId);
+      const result = await getGapFavorites();
       res.status(200).json({
-        clientId,
         favorites: result.favorites,
         store: result
       });
@@ -59,15 +42,14 @@ export default async function handler(req, res) {
       if (!list) {
         res.status(400).json({
           error: "invalid_body",
-          message: '{ "clientId": "...", "favorites": [...] } 형식이 필요합니다.'
+          message: '{ "favorites": [...] } 형식이 필요합니다.'
         });
         return;
       }
 
-      const result = await setGapFavorites(clientId, list);
+      const result = await setGapFavorites(list);
       res.status(200).json({
         ok: true,
-        clientId,
         favorites: result.favorites,
         store: result
       });

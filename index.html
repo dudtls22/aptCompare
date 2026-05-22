@@ -243,7 +243,7 @@
           /* 다음 포트 시도 */
         }
       }
-      return computeLocalApiBase(LOCAL_API_PORTS_TRY[0]);
+      return VERCEL_API_PROXY_BASE;
     }
 
     /* ========================================================================
@@ -1141,10 +1141,10 @@
     /* ========================================================================
        즐겨찾기 (Upstash Redis) · 카카오 알림
        ======================================================================== */
-    const CLIENT_ID_STORAGE_KEY = "aptCompareClientId";
     const LEGACY_FAVORITES_STORAGE_KEY = "aptPriceCompareFavorites";
     const FAVORITES_MIRROR_KEY = "aptCompareFavoritesMirror";
     let legacyFavoritesMigrated = false;
+    let lastFavoritesMeta = { storage: "", warning: "" };
 
     function readFavoritesMirror() {
       try {
@@ -1165,16 +1165,26 @@
       return normalized;
     }
 
-    function getClientId() {
-      let id = localStorage.getItem(CLIENT_ID_STORAGE_KEY);
-      if (!id) {
-        id =
-          typeof crypto !== "undefined" && crypto.randomUUID
-            ? crypto.randomUUID()
-            : `client-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-        localStorage.setItem(CLIENT_ID_STORAGE_KEY, id);
+    function updateFavoritesMeta(store) {
+      if (!store || typeof store !== "object") return;
+      lastFavoritesMeta = {
+        storage: String(store.storage || ""),
+        warning: String(store.warning || "")
+      };
+    }
+
+    function favoritesStorageStatusHtml() {
+      const { storage, warning } = lastFavoritesMeta;
+      if (storage === "upstash") {
+        return '<p class="hint fav-storage-ok">저장: Redis(Upstash) — Edge·Chrome·휴대폰 등 모든 브라우저에서 동일한 즐겨찾기 목록을 사용합니다.</p>';
       }
-      return id;
+      if (warning) {
+        return `<p class="hint fav-storage-warn">저장: ${escapeHtml(storage || "로컬")} — ${escapeHtml(warning)}</p>`;
+      }
+      if (storage === "browser-mirror") {
+        return '<p class="hint fav-storage-warn">저장: 이 브라우저에만 보관 중입니다. API/Redis 연결을 확인하세요.</p>';
+      }
+      return "";
     }
 
     function normalizeFavoriteEntry(entry) {
@@ -1190,15 +1200,10 @@
 
     /** 서버(Redis 또는 로컬 파일) + 브라우저 미러에서 즐겨찾기 조회 */
     async function readFavorites() {
-      const clientId = getClientId();
       try {
-        const res = await fetch(
-          `${getApiProxyBase()}/api/favorites?clientId=${encodeURIComponent(clientId)}`,
-          {
-            headers: { "X-Client-Id": clientId },
-            cache: "no-store"
-          }
-        );
+        const res = await fetch(`${getApiProxyBase()}/api/favorites`, {
+          cache: "no-store"
+        });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
           throw new Error(data?.message || `HTTP ${res.status}`);
@@ -1226,6 +1231,7 @@
           }
         }
 
+        updateFavoritesMeta(data?.store);
         if (data?.store?.warning) {
           console.warn("[favorites]", data.store.warning);
         }
@@ -1258,16 +1264,12 @@
 
     async function persistFavorites(list, options = {}) {
       const normalized = list.map(normalizeFavoriteEntry).filter((f) => f.lawdCd && f.apt);
-      const clientId = getClientId();
       try {
         const res = await fetch(`${getApiProxyBase()}/api/favorites`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Client-Id": clientId
-          },
+          headers: { "Content-Type": "application/json" },
           cache: "no-store",
-          body: JSON.stringify({ clientId, favorites: normalized })
+          body: JSON.stringify({ favorites: normalized })
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
@@ -1277,8 +1279,14 @@
           ? data.favorites.map(normalizeFavoriteEntry)
           : normalized;
         writeFavoritesMirror(favorites);
-        if (data?.store?.warning && !options.silent) {
-          console.warn("[favorites]", data.store.warning);
+        updateFavoritesMeta(data?.store);
+        if (!options.silent) {
+          if (data?.store?.warning) {
+            console.warn("[favorites]", data.store.warning);
+            setMessage(`즐겨찾기 저장 경고: ${data.store.warning}`, true);
+          } else if (data?.store?.storage === "upstash") {
+            setMessage("즐겨찾기가 저장되었습니다. (모든 브라우저·기기에서 동일)");
+          }
         }
         return { ...data, favorites };
       } catch (err) {
@@ -1602,10 +1610,11 @@
           .sort((a, b) => favoriteKey(a).localeCompare(favoriteKey(b)));
       } catch (err) {
         favoritesModalBody.innerHTML =
-          `<p class="hint notify-hint">즐겨찾기를 Redis에서 불러오지 못했습니다: ${escapeHtml(err.message)}</p>`;
+          `<p class="hint notify-hint">즐겨찾기를 서버에서 불러오지 못했습니다: ${escapeHtml(err.message)}</p>`;
         return;
       }
       const hint =
+        favoritesStorageStatusHtml() +
         '<p class="hint notify-hint">🔔 즐겨찾기에서 🔔 알림 ON → 매일 9:30(한국시간) 오늘 등록된 실거래가 카카오톡으로 전송. Vercel cron + KAKAO_ACCESS_TOKEN + Upstash 필요.</p>';
       if (!list.length) {
         favoritesModalBody.innerHTML = hint + '<p class="fav-empty">즐겨찾기된 아파트가 없습니다.</p>';
