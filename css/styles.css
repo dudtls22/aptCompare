@@ -723,6 +723,39 @@ button:disabled {
   margin-top: 10px;
 }
 
+.apt-summary-title {
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+
+.apt-summary-wrap {
+  margin-bottom: 14px;
+}
+
+.apt-summary-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.apt-summary-table th,
+.apt-summary-table td {
+  text-align: center;
+  font-size: 13px;
+  padding: 8px 10px;
+}
+
+.apt-summary-table th {
+  background: #f3f4f6;
+  font-weight: 700;
+}
+
+.apt-summary-hint {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--muted, #6b7280);
+}
+
 .compare-tag {
   display: inline-block;
   padding: 2px 8px;

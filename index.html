@@ -89,6 +89,22 @@
 
     <div class="card chart-card">
       <canvas id="priceChart" height="120"></canvas>
+      <p class="section-title section-title-compact apt-summary-title">아파트정보 요약</p>
+      <div class="table-wrap apt-summary-wrap">
+        <table class="deal-table apt-summary-table">
+          <thead>
+            <tr>
+              <th>아파트명</th>
+              <th>준공년월</th>
+              <th>규모(세대수)</th>
+            </tr>
+          </thead>
+          <tbody id="aptSummaryBody">
+            <tr class="empty-row"><td colspan="3">조회 후 아파트 정보가 표시됩니다.</td></tr>
+          </tbody>
+        </table>
+        <p id="aptSummaryHint" class="apt-summary-hint" hidden></p>
+      </div>
       <div class="table-wrap">
         <table class="deal-table deal-table-fixed">
           <colgroup>
@@ -143,6 +159,7 @@
   <script src="js/app-state.js"></script>
   <script src="js/app-index-state.js"></script>
   <script src="js/app-menu.js"></script>
+  <script src="js/apt-summary.js"></script>
   <script>
     /* ========================================================================
        API · 프록시
@@ -158,6 +175,7 @@
     function getApiProxyBase() {
       return API_PROXY_BASE;
     }
+    window.getApiProxyBase = getApiProxyBase;
 
     async function parseApiJsonResponse(res) {
       const ct = res.headers.get("content-type") || "";
@@ -262,6 +280,9 @@
     const districtLabel = document.getElementById("districtLabel");
     const monthsSelect = document.getElementById("months");
     const dealTableBody = document.getElementById("dealTableBody");
+    const aptSummaryBody = document.getElementById("aptSummaryBody");
+    const aptSummaryHint = document.getElementById("aptSummaryHint");
+    const APT_SUM = window.APT_SUMMARY;
     const loadMoreBtn = document.getElementById("loadMoreBtn");
     const favoritesModal = document.getElementById("favoritesModal");
     const favoritesModalBody = document.getElementById("favoritesModalBody");
@@ -929,8 +950,9 @@
       return dedupeTradeItems(merged);
     }
 
-    function collectDealPoints(monthlyRows, condition) {
+    function collectDealPoints(monthlyRows, condition, planIndex) {
       const points = [];
+      const idx = planIndex || (APT_SUM ? APT_SUM.buildFloorPlanIndex([]) : null);
       for (const { ym, items } of monthlyRows) {
         for (const it of items) {
           if (condition.dong && !itemMatchesSelectedDong(it, condition.dong)) continue;
@@ -946,6 +968,10 @@
           const rawDong = String(getDongName(it) || "").trim();
           const fallbackDong = String(condition.dong || "").trim();
           const af = getAreaFloorValue(it);
+          const areaType =
+            idx && APT_SUM
+              ? APT_SUM.resolveFloorPlanTypeForItem(idx, condition.apt, condition.area, it)
+              : condition.areaType || "";
           points.push({
             dateLabel: getDealDateLabel(it, ym),
             price: Number.isFinite(price) ? price : 0,
@@ -953,6 +979,7 @@
             aptName: getAptName(it) || "-",
             dongName: rawDong || fallbackDong || "-",
             areaFloor: af != null ? String(af) : "",
+            areaType,
             floor: getFloor(it) || "-",
             lineLabel: condition.label,
             lineColor: condition.color,
@@ -1784,7 +1811,9 @@
         const dong = String(p.dongName || "").trim();
         if (dong && dong !== "-") parts.push(dong);
       }
-      return parts.join(" ") || "-";
+      const base = parts.join(" ") || "-";
+      const type = String(p.areaType || "").trim();
+      return APT_SUM ? APT_SUM.appendAreaTypeToCompareLabel(base, type) : base;
     }
 
     async function renderDealTable() {
@@ -1893,9 +1922,30 @@
           }))
         );
 
+        const allItems = monthlyRows.flatMap((row) => row.items || []);
+        const planIndex = APT_SUM ? APT_SUM.buildFloorPlanIndex(allItems) : null;
+        for (const c of conditions) {
+          c.areaType =
+            planIndex && APT_SUM
+              ? APT_SUM.resolveFloorPlanType(planIndex, c.apt, c.area, allItems, c)
+              : "";
+        }
+
         const { labels, datasets } = buildComparisonDatasets(monthlyRows, conditions);
         drawChart(labels, datasets);
-        const points = conditions.flatMap((condition) => collectDealPoints(monthlyRows, condition));
+
+        if (APT_SUM && aptSummaryBody) {
+          void APT_SUM.renderAptSummaryWithEnrichment(
+            aptSummaryBody,
+            conditions,
+            allItems,
+            aptSummaryHint
+          );
+        }
+
+        const points = conditions.flatMap((condition) =>
+          collectDealPoints(monthlyRows, condition, planIndex)
+        );
         allDealPoints = [...points].sort((a, b) => b.dateLabel.localeCompare(a.dateLabel));
         visibleDealCount = TABLE_PAGE_SIZE;
         await renderDealTable();
@@ -1928,6 +1978,9 @@
         setMessage(`조회 실패: ${err.message}\n${hint}`, true);
         allDealPoints = [];
         visibleDealCount = TABLE_PAGE_SIZE;
+        if (APT_SUM && aptSummaryBody) {
+          APT_SUM.renderAptSummaryTable(aptSummaryBody, []);
+        }
         await renderDealTable();
       } finally {
         loadBtn.disabled = false;
@@ -2219,6 +2272,7 @@
       } catch {
         API_PROXY_BASE = (await probeSameOriginApi()) ? "" : VERCEL_API_PROXY_BASE;
       }
+      window.getApiProxyBase = getApiProxyBase;
       refreshMarketTicker();
       setInterval(refreshMarketTicker, MARKET_REFRESH_MS);
 

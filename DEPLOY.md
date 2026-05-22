@@ -43,7 +43,7 @@ git push origin main
 
 | 이름 | 용도 |
 |------|------|
-| `DATA_GO_KR_SERVICE_KEY` | 국토부 실거래 API |
+| `DATA_GO_KR_SERVICE_KEY` | 국토부 실거래·K-apt(공동주택 기본/단지목록) API — **동일 인증키** |
 | `UPSTASH_REDIS_REST_URL` | 즐겨찾기 (선택) |
 | `UPSTASH_REDIS_REST_TOKEN` | 즐겨찾기 (선택) |
 | `KAKAO_ACCESS_TOKEN` | 알림 (선택) |
@@ -60,6 +60,15 @@ git push origin main
 `api/market.js`, `api/proxy.js`, `api/health.js` 는 Vercel에서 `lib/` import 없이 동작하도록 작성되어 있습니다 (배포 시 모듈 누락 방지).
 
 실거래 조회가 `missing_service_key` 이면 Vercel에 **`DATA_GO_KR_SERVICE_KEY`** 환경 변수를 넣고 Redeploy 하세요.
+
+**아파트정보 요약(세대수)** 가 `-` 로만 나오면:
+
+1. [공공데이터포털](https://www.data.go.kr) → 마이페이지 → **오픈API 활용신청** 에서 아래가 **승인** 상태인지 확인  
+   - 국토교통부_**공동주택 기본 정보제공 서비스** (V4)  
+   - 국토교통부_**공동주택 단지 목록제공 서비스** (단지코드 조회용)  
+2. 각 API 상세에서 **사용할 인증키**(일반/개인)가 Vercel·`.env` 의 `DATA_GO_KR_SERVICE_KEY` 와 **같은 키**로 연결돼 있는지 확인  
+3. Vercel **Redeploy** 후 다시 조회  
+4. 로컬 진단: `node scripts/test-apt-basis.mjs` → `Basis V4` 가 `403` 이면 아직 키 연동 미완료
 
 ---
 

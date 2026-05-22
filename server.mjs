@@ -15,6 +15,7 @@ import { runDailyNotify } from "./lib/daily-notify.mjs";
 import { sendTestKakaoLatestTrade } from "./lib/test-kakao-notify.mjs";
 import { validateKakaoAccessToken } from "./lib/kakao.mjs";
 import { buildDataGoKrQueryString } from "./lib/data-go-key.mjs";
+import { enrichAptBasisBatch } from "./lib/apt-basis.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -341,6 +342,34 @@ async function handleApiRoute(req, res, u, apiPath) {
       }
       return true;
     }
+  }
+
+  if (apiPath === "/api/apt-basis" && req.method === "POST") {
+    if (!SERVICE_KEY) {
+      sendJson(res, 500, {
+        error: "missing_service_key",
+        message: ".env 파일에 DATA_GO_KR_SERVICE_KEY 를 설정하세요."
+      });
+      return true;
+    }
+    try {
+      const raw = await readRequestBody(req);
+      const body = raw ? JSON.parse(raw) : {};
+      const conditions = Array.isArray(body?.conditions) ? body.conditions : [];
+      const result = await enrichAptBasisBatch(conditions, SERVICE_KEY);
+      sendJson(res, 200, {
+        ok: true,
+        byKey: result.byKey,
+        errors: result.errors,
+        hints: result.hints
+      });
+    } catch (err) {
+      sendJson(res, 502, {
+        error: "apt_basis_failed",
+        message: err instanceof Error ? err.message : String(err)
+      });
+    }
+    return true;
   }
 
   if (apiPath === "/api/cron/daily-notify" && (req.method === "GET" || req.method === "POST")) {

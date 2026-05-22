@@ -97,6 +97,23 @@
       <div id="gapLegend" class="gap-legend"></div>
       <canvas id="gapChart" height="200"></canvas>
 
+      <p class="section-title section-title-compact apt-summary-title">아파트정보 요약</p>
+      <div class="table-wrap apt-summary-wrap">
+        <table class="deal-table apt-summary-table gap-apt-summary-table">
+          <thead>
+            <tr>
+              <th>아파트명</th>
+              <th>준공년월</th>
+              <th>규모(세대수)</th>
+            </tr>
+          </thead>
+          <tbody id="gapAptSummaryBody">
+            <tr class="empty-row"><td colspan="3">분석 실행 후 아파트 정보가 표시됩니다.</td></tr>
+          </tbody>
+        </table>
+        <p id="gapAptSummaryHint" class="apt-summary-hint" hidden></p>
+      </div>
+
       <p class="section-title section-title-compact" style="margin-top:14px;">분기별 Gap 표</p>
       <div class="gap-table-wrap">
         <table class="gap-table">
@@ -140,6 +157,7 @@
   <script src="js/app-state.js"></script>
   <script src="js/app-menu.js"></script>
   <script src="js/gap-mock-data.js"></script>
+  <script src="js/apt-summary.js"></script>
   <script src="js/gap-api.js"></script>
   <script src="js/gap-favorites.js"></script>
   <script src="js/gap-app.js"></script>
