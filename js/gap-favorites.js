@@ -105,7 +105,17 @@
         writeMirror(loaded);
       } else {
         const mirror = readMirror();
-        if (mirror.length) loaded = mirror;
+        if (mirror.length) {
+          loaded = mirror;
+          if (data?.store?.storage === "upstash") {
+            try {
+              const saved = await persistFavorites(mirror, { silent: true });
+              loaded = saved.favorites;
+            } catch {
+              /* 미러만 유지 */
+            }
+          }
+        }
       }
       return loaded;
     } catch (err) {
