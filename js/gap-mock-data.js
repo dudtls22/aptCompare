@@ -45,14 +45,14 @@
       {
         id: "baseline",
         label: baseline.label || "기준 아파트",
-        color: "#1e6091",
+        color: "#233d4d",
         role: "baseline",
         byQuarter: baselineMap
       },
       ...candidates.map((c, i) => ({
         id: `cand${i + 1}`,
         label: c.label || `비교 ${i + 1}`,
-        color: ["#99d98c", "#52b69a", "#168aad"][i],
+        color: ["#a1c181", "#619b8a", "#fcca46"][i],
         role: "candidate",
         byQuarter: candidateMaps[i]
       }))

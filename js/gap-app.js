@@ -8,13 +8,13 @@
   const FAV = window.GAP_FAV;
 
   const MAX_CAND_SLOTS = 3;
+  /** 1번 화면 SLOT_THEME 과 동일 순서: 1·2·3=후보, 5=기준 */
   const CAND_THEME = {
-    1: { color: "#99d98c", cls: "c1", lightText: false },
-    2: { color: "#52b69a", cls: "c2", lightText: false },
-    3: { color: "#168aad", cls: "c3", lightText: true }
+    1: { color: "#a1c181", cls: "c1", lightText: false },
+    2: { color: "#619b8a", cls: "c2", lightText: true },
+    3: { color: "#fcca46", cls: "c3", lightText: false }
   };
-  /** 기준 카드 c5 배경과 동일 */
-  const BASELINE_COLOR = "#1e6091";
+  const BASELINE_COLOR = "#233d4d";
 
   const useMock = new URLSearchParams(location.search).get("mock") === "1";
   let gapChart = null;
@@ -324,13 +324,13 @@
 
   function getSlotSeriesColor(role, slotId) {
     if (role === "baseline") return BASELINE_COLOR;
-    return CAND_THEME[slotId]?.color || "#52b69a";
+    return CAND_THEME[slotId]?.color || "#619b8a";
   }
 
   function textColorOnBg(hex) {
     const c = String(hex || "").toLowerCase();
-    if (c === "#1e6091" || c === "#168aad" || c === "#184e77" || c === "#1a759f") {
-      return "#ffffff";
+    if (c === "#233d4d" || c === "#619b8a") {
+      return "#f8fafc";
     }
     return "#111111";
   }
@@ -761,54 +761,68 @@
     return { quarters, series, rows, isMock: false };
   }
 
-  function renderLegend(series) {
-    const lineItems = series.map(
-      (s) =>
-        `<span class="gap-legend-item"><span class="gap-legend-dot" style="background:${s.color}"></span>${s.label}</span>`
-    );
-    const barItems = series
-      .filter((s) => s.role === "candidate")
-      .map(
-        (s) =>
-          `<span class="gap-legend-item"><span class="gap-legend-bar" style="background:${s.color}"></span>${s.label} 차액</span>`
-      );
-    legendEl.innerHTML = [...lineItems, ...barItems].join("");
+  function legendNameForSeries(s) {
+    const apt = String(s.aptName || "").trim();
+    if (s.role === "baseline") {
+      return apt ? `${apt} (기준)` : "기준";
+    }
+    return apt || String(s.label || "").trim() || "비교";
   }
 
-  function buildGapBarDatasets(analysis) {
+  function renderLegend(series) {
+    if (!legendEl) return;
+    legendEl.innerHTML = series
+      .map((s) => {
+        const text = escapeHtml(legendNameForSeries(s));
+        const icon =
+          s.role === "baseline"
+            ? `<span class="gap-legend-bar" style="background:${s.color}"></span>`
+            : `<span class="gap-legend-dot" style="background:${s.color}"></span>`;
+        return `<span class="gap-legend-item">${icon}${text}</span>`;
+      })
+      .join("");
+  }
+
+  /** 기준 아파트 평균 실거래가 — 막대(우측 축) */
+  function buildBaselinePriceBarDataset(analysis) {
+    const baseline = analysis.series.find((s) => s.role === "baseline");
+    if (!baseline) return [];
+    const labels = analysis.quarters;
+    return [
+      {
+        type: "bar",
+        yAxisID: "yPrice",
+        label: legendNameForSeries(baseline),
+        data: labels.map((qk) => baseline.byQuarter[qk] ?? null),
+        backgroundColor: baseline.color + "b3",
+        borderColor: baseline.color,
+        borderWidth: 1,
+        borderRadius: 2,
+        order: 1,
+        barPercentage: 0.45,
+        categoryPercentage: 0.55
+      }
+    ];
+  }
+
+  /** 후보 아파트 Gap — 꺾은선(좌측 축), 가격 꺾은선 없음 */
+  function buildGapLineDatasets(analysis) {
     const labels = analysis.quarters;
     const candSeries = analysis.series.filter((s) => s.role === "candidate");
-    const groupCount = Math.max(candSeries.length, 1);
-
     return candSeries.map((s, idx) => ({
-      type: "bar",
-      yAxisID: "yGap",
-      label: `${s.label} 차액`,
-      data: labels.map((_, qi) => analysis.rows[qi]?.cells[idx]?.gap ?? null),
-      backgroundColor: s.color + "b3",
-      borderColor: s.color,
-      borderWidth: 1,
-      borderRadius: 2,
-      order: 2,
-      barPercentage: groupCount > 1 ? 0.82 : 0.55,
-      categoryPercentage: groupCount > 1 ? 0.72 : 0.5
-    }));
-  }
-
-  function buildPriceLineDatasets(analysis) {
-    const labels = analysis.quarters;
-    return analysis.series.map((s) => ({
       type: "line",
-      yAxisID: "yPrice",
-      label: s.label,
-      data: labels.map((qk) => s.byQuarter[qk] ?? null),
+      yAxisID: "yGap",
+      label: `${legendNameForSeries(s)} 차액`,
+      data: labels.map((_, qi) => analysis.rows[qi]?.cells[idx]?.gap ?? null),
       borderColor: s.color,
       backgroundColor: s.color + "33",
-      borderWidth: s.role === "baseline" ? 3 : 2,
+      borderWidth: 3.5,
       tension: 0.25,
       spanGaps: true,
-      pointRadius: 3,
-      order: 1
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      pointHitRadius: 12,
+      order: 2
     }));
   }
 
@@ -816,8 +830,8 @@
     const ctx = document.getElementById("gapChart");
     if (gapChart) gapChart.destroy();
     const labels = analysis.quarters;
-    const barDatasets = buildGapBarDatasets(analysis);
-    const lineDatasets = buildPriceLineDatasets(analysis);
+    const barDatasets = buildBaselinePriceBarDataset(analysis);
+    const lineDatasets = buildGapLineDatasets(analysis);
 
     gapChart = new Chart(ctx, {
       type: "line",
@@ -828,17 +842,20 @@
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        interaction: { mode: "index", intersect: false },
+        interaction: { mode: "nearest", intersect: true, axis: "xy" },
         plugins: {
           legend: { display: false },
           tooltip: {
+            mode: "nearest",
+            intersect: true,
             callbacks: {
               label: (ctx) => {
                 const y = ctx.parsed.y;
                 if (y == null || !Number.isFinite(y)) return null;
-                return ctx.dataset.yAxisID === "yGap"
-                  ? `${ctx.dataset.label}: ${formatGap(y)}`
-                  : `${ctx.dataset.label}: ${formatKrw(y)}`;
+                if (ctx.dataset.yAxisID === "yPrice") {
+                  return `${ctx.dataset.label}: ${formatKrw(y)}`;
+                }
+                return `${ctx.dataset.label}: ${formatGap(y)}`;
               }
             }
           }
@@ -884,7 +901,14 @@
     const baseBg = baselineSeries?.color || BASELINE_COLOR;
     const baseFg = textColorOnBg(baseBg);
 
-    let head = `<tr><th class="gap-th-quarter">분기</th><th class="gap-th-baseline" style="background:${baseBg};color:${baseFg}">[기준 아파트]</th>`;
+    const baseApt = escapeHtml(
+      String(baselineSeries?.aptName || "아파트명").trim() || "아파트명"
+    );
+    let head =
+      `<tr><th class="gap-th-quarter">분기</th>` +
+      `<th class="gap-th-baseline" style="background:${baseBg};color:${baseFg}" title="${baseApt}">` +
+      `<span class="gap-th-cand-inner"><span class="gap-th-apt">${baseApt}</span>` +
+      `<span class="gap-th-gap-label">(기준)</span></span></th>`;
     candSeries.forEach((s) => {
       const bg = s.color;
       const fg = textColorOnBg(bg);
@@ -908,11 +932,11 @@
         let tr = `<tr><td class="gap-td-quarter">${row.quarter}</td><td class="gap-td-baseline" style="background:${baseBg};color:${baseFg}">${formatKrw(row.basePrice)}</td>`;
         row.cells.forEach((cell, idx) => {
           const s = candSeries[idx];
-          const bg = s?.color || "#52b69a";
+          const bg = s?.color || "#619b8a";
           const fg = textColorOnBg(bg);
           const gapClass =
             cell.gap == null ? "" : cell.gap > 0 ? "gap-positive" : cell.gap < 0 ? "gap-negative" : "";
-          const onDarkGap = fg === "#ffffff" && gapClass;
+          const onDarkGap = fg === "#f8fafc" && gapClass;
           const tdClass = ["gap-td-cand", gapClass, onDarkGap ? "gap-gap-on-dark" : ""]
             .filter(Boolean)
             .join(" ");

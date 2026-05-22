@@ -284,7 +284,7 @@
   font-weight: 700;
 }
 
-/* 비교3 등 어두운 배경(#168aad) — 밝은 차액 색 */
+/* 진한 배경(#233d4d, #619b8a) — 밝은 차액 글자 */
 .gap-table .gap-td-cand.gap-gap-on-dark.gap-positive {
   color: #fecaca !important;
 }

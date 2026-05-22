@@ -304,6 +304,7 @@
               <div class="fav-row-title">${title}</div>
               <div class="fav-row-meta">${meta}</div>
             </div>
+            <button type="button" class="btn-remove-fav" data-gap-fav-remove="${kEnc}" title="목록에서 제거" aria-label="삭제">×</button>
           </div>`
           );
         })
@@ -363,6 +364,16 @@
     });
 
     pickBody?.addEventListener("click", async (e) => {
+      const rm = e.target.closest("[data-gap-fav-remove]");
+      if (rm) {
+        e.stopPropagation();
+        await removeFavoriteByKey(
+          decodeURIComponent(rm.getAttribute("data-gap-fav-remove") || "")
+        );
+        await renderPickModal();
+        handlers?.onFavoritesChanged?.();
+        return;
+      }
       const star = e.target.closest("[data-gap-slot-star]");
       if (star) {
         e.stopPropagation();

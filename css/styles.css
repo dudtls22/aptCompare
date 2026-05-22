@@ -3,18 +3,25 @@
    ========================================================================== */
 
 :root {
-  --bg: #f3f9ef;
+  --bg: #f4f6f5;
   --card: #ffffff;
   --text: #111111;
   --muted: #4b5563;
-  --primary: #184e77;
-  --border: #99d98c;
+  --primary: #233d4d;
+  --border: #a1c181;
   --danger: #b91c1c;
-  --tone-1: #d9ed92;
-  --tone-2: #99d98c;
-  --tone-3: #52b69a;
-  --tone-4: #168aad;
-  --tone-5: #184e77;
+  --chart-1: #a1c181;
+  --chart-2: #619b8a;
+  --chart-3: #fcca46;
+  --chart-4: #fe7f2d;
+  --chart-5: #233d4d;
+  --on-dark: #f8fafc;
+  --on-light: #111111;
+  --tone-1: #a1c181;
+  --tone-2: #619b8a;
+  --tone-3: #fcca46;
+  --tone-4: #fe7f2d;
+  --tone-5: #233d4d;
   --app-max: 480px;
 }
 
@@ -26,7 +33,7 @@ body {
   margin: 0;
   font-family: "Segoe UI", "Malgun Gothic", sans-serif;
   color: var(--text);
-  background: #eaf5e5;
+  background: #eef2f0;
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
   padding-left: env(safe-area-inset-left);
@@ -46,7 +53,7 @@ body {
 
 .card {
   background: var(--card);
-  border: 1px solid var(--tone-3);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 10px;
   margin-bottom: 8px;
@@ -123,7 +130,7 @@ p.desc {
 }
 
 .btn-secondary.btn-header-fav:hover {
-  background: #133f61;
+  background: #1a2f3d;
   color: #fff;
 }
 
@@ -261,47 +268,42 @@ p.desc {
 }
 
 .compare-card.c1 {
-  background: var(--tone-2);
+  background: var(--chart-1);
+  color: var(--on-light);
 }
 
 .compare-card.c2 {
-  background: var(--tone-3);
+  background: var(--chart-2);
+  color: var(--on-dark);
 }
 
 .compare-card.c3 {
-  background: var(--tone-4);
+  background: var(--chart-3);
+  color: var(--on-light);
 }
 
 .compare-card.c4 {
-  background: #1a759f;
+  background: var(--chart-4);
+  color: var(--on-light);
 }
 
 .compare-card.c5 {
-  background: #1e6091;
+  background: var(--chart-5);
+  color: var(--on-dark);
 }
 
-.compare-card.c3,
-.compare-card.c4,
-.compare-card.c5 {
-  color: #fff;
-}
-
-.compare-card.c3 .section-title,
-.compare-card.c3 label,
-.compare-card.c3 .btn-link,
-.compare-card.c4 .section-title,
-.compare-card.c4 label,
-.compare-card.c4 .btn-link,
+.compare-card.c2 .section-title,
+.compare-card.c2 label,
+.compare-card.c2 .btn-link,
 .compare-card.c5 .section-title,
 .compare-card.c5 label,
 .compare-card.c5 .btn-link {
-  color: #fff;
+  color: var(--on-dark);
 }
 
-.compare-card.c3 .btn-link:hover,
-.compare-card.c4 .btn-link:hover,
+.compare-card.c2 .btn-link:hover,
 .compare-card.c5 .btn-link:hover {
-  color: #f1f5f9;
+  color: #e2e8f0;
 }
 
 .field-label-row {
@@ -309,6 +311,26 @@ p.desc {
   align-items: center;
   gap: 4px;
   min-height: 20px;
+}
+
+.compare-dong-label-row {
+  gap: 2px;
+}
+
+.compare-dong-label-row .star-btn {
+  margin: 0;
+  flex-shrink: 0;
+  min-width: 0;
+  width: 22px;
+  min-height: 20px;
+  padding: 0;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.compare-dong-label-row .btn-slot-remove {
+  margin: 0;
+  flex-shrink: 0;
 }
 
 .field-label-row-right {
@@ -353,8 +375,7 @@ p.desc {
   pointer-events: none;
 }
 
-.compare-card.c3 .btn-fav-pick-icon,
-.compare-card.c4 .btn-fav-pick-icon,
+.compare-card.c2 .btn-fav-pick-icon,
 .compare-card.c5 .btn-fav-pick-icon {
   color: #fde68a;
 }
@@ -785,14 +806,22 @@ button:disabled {
 
 .fav-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 10px;
   padding: 12px;
   border: 1px solid var(--border);
   border-radius: 10px;
   margin-bottom: 8px;
   background: #fafafa;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+}
+
+.fav-row .star-btn,
+.fav-row .notify-btn,
+.fav-row .btn-remove-fav {
+  width: auto;
+  margin-top: 0;
+  flex-shrink: 0;
 }
 
 .fav-row-main {
@@ -817,14 +846,18 @@ button:disabled {
   background: #fee2e2;
   color: var(--danger);
   border: 1px solid #fecaca;
-  margin: 0;
+  margin: 0 0 0 auto;
   width: 44px;
+  min-width: 44px;
   height: 44px;
+  min-height: 44px;
   padding: 0;
   border-radius: 8px;
-  font-size: 18px;
+  font-size: 22px;
+  font-weight: 700;
   line-height: 1;
   flex-shrink: 0;
+  cursor: pointer;
 }
 
 .fav-row.pickable {

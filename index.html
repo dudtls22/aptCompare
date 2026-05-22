@@ -59,7 +59,8 @@
         <div class="compare-card c1">
           <div class="compare-grid row-fields">
             <div class="field field-compact">
-              <div class="field-label-row">
+              <div class="field-label-row compare-dong-label-row">
+                <button type="button" class="star-btn" data-fav-star-slot="1" title="즐겨찾기 추가/해제" aria-label="즐겨찾기">☆</button>
                 <label for="dongSelect1">동</label>
               </div>
               <select id="dongSelect1"><option value="">선택 안함</option></select>
@@ -83,7 +84,6 @@
       <div class="field full">
         <p id="indexRestoreHint" class="restore-hint" hidden>기존 조회 했던 입력값 자동 셋팅 중</p>
         <button id="loadBtn">차트 조회</button>
-        <div id="message" class="message-compact">동·아파트·평형 선택 후 [아파트 추가+]로 최대 5건 비교</div>
       </div>
     </div>
 
@@ -263,7 +263,6 @@
     const monthsSelect = document.getElementById("months");
     const dealTableBody = document.getElementById("dealTableBody");
     const loadMoreBtn = document.getElementById("loadMoreBtn");
-    const messageEl = document.getElementById("message");
     const favoritesModal = document.getElementById("favoritesModal");
     const favoritesModalBody = document.getElementById("favoritesModalBody");
     const slotFavModal = document.getElementById("slotFavModal");
@@ -309,11 +308,11 @@
     let chart;
     const MAX_COMPARE_SLOTS = 5;
     const SLOT_THEME = {
-      1: { color: "#99d98c", cls: "c1" },
-      2: { color: "#52b69a", cls: "c2" },
-      3: { color: "#168aad", cls: "c3", lightText: true },
-      4: { color: "#1a759f", cls: "c4", lightText: true },
-      5: { color: "#1e6091", cls: "c5", lightText: true }
+      1: { color: "#a1c181", cls: "c1" },
+      2: { color: "#619b8a", cls: "c2", lightText: true },
+      3: { color: "#fcca46", cls: "c3" },
+      4: { color: "#fe7f2d", cls: "c4" },
+      5: { color: "#233d4d", cls: "c5", lightText: true }
     };
 
     function slotIdFromCardEl(cardEl) {
@@ -379,7 +378,7 @@
       const dark = Object.values(SLOT_THEME).some(
         (t) => t.lightText && String(t.color).toLowerCase() === c
       );
-      return dark ? "#ffffff" : "#111111";
+      return dark ? "#f8fafc" : "#111111";
     }
     let compareSlotsRoot = null;
     let addCompareSlotBtn = null;
@@ -439,10 +438,15 @@
             slotId +
             ' 삭제" title="삭제">×</button>'
           : "";
+      const starBtn =
+        '<button type="button" class="star-btn" data-fav-star-slot="' +
+        slotId +
+        '" title="즐겨찾기 추가/해제" aria-label="즐겨찾기">☆</button>';
       card.innerHTML =
         '<div class="compare-grid row-fields">' +
         '<div class="field field-compact">' +
-        '<div class="field-label-row">' +
+        '<div class="field-label-row compare-dong-label-row">' +
+        starBtn +
         removeBtn +
         '<label for="dongSelect' + slotId + '">동</label>' +
         "</div>" +
@@ -459,6 +463,7 @@
         id: slotId,
         color: theme.color,
         cardEl: card,
+        starEl: card.querySelector('[data-fav-star-slot="' + slotId + '"]'),
         dongEl: card.querySelector("#dongSelect" + slotId),
         aptEl: card.querySelector("#aptSelect" + slotId),
         areaEl: card.querySelector("#areaSelect" + slotId)
@@ -490,6 +495,7 @@
         id: slotId,
         color: theme.color,
         cardEl,
+        starEl: cardEl.querySelector('[data-fav-star-slot="' + slotId + '"]'),
         dongEl: cardEl.querySelector("#dongSelect" + slotId),
         aptEl: cardEl.querySelector("#aptSelect" + slotId),
         areaEl: cardEl.querySelector("#areaSelect" + slotId)
@@ -591,14 +597,14 @@
           setMessage("아파트 비교 영역이 추가되었습니다. (비교 " + slots.length + ")");
         });
       }
+      void refreshAllCompareSlotStars();
     }
 
     /* ========================================================================
        유틸 · 거래 데이터 파싱
        ======================================================================== */
-    function setMessage(text, isError = false) {
-      messageEl.textContent = text;
-      messageEl.className = isError ? "error" : "";
+    function setMessage(_text, _isError = false) {
+      /* 차트 조회 하단 안내 문구 영역 제거 — 호출부 호환만 유지 */
     }
 
     function ymToString(date) {
@@ -1093,11 +1099,16 @@
           label: condition.label,
           data,
           borderColor: condition.color,
-          backgroundColor: `${condition.color}33`,
+          backgroundColor: "transparent",
+          pointBackgroundColor: condition.color,
+          pointBorderColor: condition.color,
+          pointBorderWidth: 2,
           fill: false,
           tension: 0.2,
           spanGaps: true,
-          pointRadius: 3,
+          pointRadius: 4,
+          pointHitRadius: 12,
+          borderWidth: 3,
           showLine: true
         };
       });
@@ -1116,9 +1127,23 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          interaction: { mode: "index", intersect: false },
+          interaction: { mode: "nearest", intersect: true, axis: "xy" },
           plugins: {
+            legend: {
+              display: true,
+              position: "top",
+              align: "end",
+              labels: {
+                boxWidth: 14,
+                boxHeight: 3,
+                usePointStyle: false,
+                color: "#111111",
+                font: { size: 11, weight: "600" }
+              }
+            },
             tooltip: {
+              mode: "nearest",
+              intersect: true,
               callbacks: {
                 label: (ctx) => {
                   if (ctx.raw == null) return "거래 데이터 없음";
@@ -1126,6 +1151,9 @@
                 }
               }
             }
+          },
+          layout: {
+            padding: { top: 4, right: 8 }
           },
           scales: {
             y: {
@@ -1322,6 +1350,46 @@
       return `${base}|${area}`;
     }
 
+    function favoriteEntryFromSlot(slot) {
+      if (!slot) return null;
+      const apt = String(slot.aptEl?.value ?? "").trim();
+      if (!apt) return null;
+      return normalizeFavoriteEntry({
+        lawdCd: guSelect.value,
+        guName: getCurrentGuName(),
+        dong: slot.dongEl?.value?.trim() ?? "",
+        apt,
+        area: slot.areaEl?.value?.trim() ?? ""
+      });
+    }
+
+    async function refreshSlotFavoriteStar(slot) {
+      if (!slot?.starEl) return;
+      try {
+        const entry = favoriteEntryFromSlot(slot);
+        if (!entry?.apt) {
+          slot.starEl.textContent = "☆";
+          slot.starEl.classList.remove("filled");
+          slot.starEl.title = "아파트 선택 후 즐겨찾기";
+          return;
+        }
+        const list = await readFavorites();
+        const filled = isFavoriteInList(entry, list);
+        slot.starEl.textContent = filled ? "★" : "☆";
+        slot.starEl.classList.toggle("filled", filled);
+        slot.starEl.title = filled ? "즐겨찾기 해제" : "즐겨찾기 추가";
+      } catch {
+        slot.starEl.textContent = "☆";
+        slot.starEl.classList.remove("filled");
+      }
+    }
+
+    async function refreshAllCompareSlotStars() {
+      for (const slot of slots) {
+        await refreshSlotFavoriteStar(slot);
+      }
+    }
+
     async function toggleFavorite(entry) {
       const list = await readFavorites();
       const k = favoriteKey(entry);
@@ -1333,6 +1401,7 @@
       }
       try {
         await writeFavorites(list);
+        await refreshAllCompareSlotStars();
         if (list.find((e) => favoriteKey(e) === k)?.notify) {
           setMessage("즐겨찾기 저장됨. 🔔 알림 ON — 매일 9:30(한국시간) 신규 등록 실거래 시 카카오톡으로 알려드립니다.");
         }
@@ -1599,6 +1668,7 @@
       } finally {
         slot.aptEl.disabled = false;
         suppressGuSelectChange = false;
+        void refreshSlotFavoriteStar(slot);
       }
     }
 
@@ -1683,6 +1753,7 @@
               <div class="fav-row-title">${title}</div>
               <div class="fav-row-meta">${meta}</div>
             </div>
+            <button type="button" class="btn-remove-fav" data-fav-remove="${kEnc}" title="목록에서 제거" aria-label="삭제">×</button>
           </div>`
           );
         }).join("")
@@ -1776,6 +1847,7 @@
       } else {
         loadMoreBtn.style.display = "none";
       }
+      void refreshAllCompareSlotStars();
     }
 
     async function loadData() {
@@ -1866,6 +1938,27 @@
        비교 슬롯 이벤트 · 초기화
        ======================================================================== */
     function bindSlotEvents(slot) {
+      slot.starEl?.addEventListener("click", async (e) => {
+        e.preventDefault();
+        const entry = favoriteEntryFromSlot(slot);
+        if (!entry?.apt) {
+          setMessage("아파트를 선택한 뒤 즐겨찾기에 추가해 주세요.", true);
+          return;
+        }
+        try {
+          const wasOn = slot.starEl.classList.contains("filled");
+          await toggleFavorite(entry);
+          await renderDealTable();
+          if (!wasOn) {
+            setMessage("즐겨찾기에 추가했습니다.");
+          } else {
+            setMessage("즐겨찾기에서 해제했습니다.");
+          }
+        } catch {
+          /* toggleFavorite 에서 메시지 표시 */
+        }
+      });
+
       slot.dongEl.addEventListener("change", async () => {
         if (slot.dongEl.dataset.programmatic === "1") return;
         const lawdCd = guSelect.value;
@@ -1892,6 +1985,7 @@
           setMessage(`비교${slot.id} 아파트 목록 조회 실패: ${err.message}`, true);
         } finally {
           slot.aptEl.disabled = false;
+          void refreshSlotFavoriteStar(slot);
         }
       });
 
@@ -1911,6 +2005,11 @@
         }
         const areas = getAreaListForApt(data, aptName);
         renderAreaOptions(slot.areaEl, areas);
+        void refreshSlotFavoriteStar(slot);
+      });
+
+      slot.areaEl.addEventListener("change", () => {
+        void refreshSlotFavoriteStar(slot);
       });
     }
 
@@ -1930,6 +2029,7 @@
       try {
         await loadDongOptionsByDistrict(guSelect.value);
         setMessage("비교 슬롯 동 목록을 불러왔습니다.");
+        void refreshAllCompareSlotStars();
       } catch (err) {
         renderDongLoading("동 목록을 불러오지 못했습니다");
         setMessage(`동 목록 조회 실패: ${err.message}`, true);
@@ -1963,6 +2063,7 @@
           await removeFavoriteByKey(decodeURIComponent(rm.getAttribute("data-fav-remove") || ""));
           await renderManageFavoritesModal();
           await renderDealTable();
+          await refreshAllCompareSlotStars();
         } catch (err) {
           setMessage(`즐겨찾기 삭제 실패: ${err.message}`, true);
         }
@@ -1982,12 +2083,27 @@
         }
         await renderManageFavoritesModal();
         await renderDealTable();
+        await refreshAllCompareSlotStars();
       }
     });
 
     slotFavModalBody.addEventListener("click", async (e) => {
+      const rm = e.target.closest("[data-fav-remove]");
+      if (rm) {
+        e.stopPropagation();
+        try {
+          await removeFavoriteByKey(decodeURIComponent(rm.getAttribute("data-fav-remove") || ""));
+          await renderSlotFavModal();
+          await renderDealTable();
+          await refreshAllCompareSlotStars();
+        } catch (err) {
+          setMessage(`즐겨찾기 삭제 실패: ${err.message}`, true);
+        }
+        return;
+      }
       const star = e.target.closest("[data-slot-star]");
       if (star) {
+        e.stopPropagation();
         const k = decodeURIComponent(star.getAttribute("data-slot-star") || "");
         const list = await readFavorites();
         const f = list.find((x) => favoriteKey(x) === k);
@@ -2000,6 +2116,7 @@
         }
         await renderSlotFavModal();
         await renderDealTable();
+        await refreshAllCompareSlotStars();
         return;
       }
       const row = e.target.closest("[data-fav-pick-key]");
@@ -2157,6 +2274,7 @@
         }
       } finally {
         setIndexRestoreUi(false);
+        void refreshAllCompareSlotStars();
       }
 
       loadMoreBtn.addEventListener("click", () => {
