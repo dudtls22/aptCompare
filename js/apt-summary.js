@@ -223,21 +223,33 @@
     return null;
   }
 
+  /** 준공년월 표기: 2026.01 (연.월) */
+  function formatCompletionYm(year, month) {
+    const y = String(year ?? "").trim();
+    const m = String(month ?? "").trim();
+    if (/^\d{4}$/.test(y) && /^\d{1,2}$/.test(m)) {
+      return `${y}.${m.padStart(2, "0")}`;
+    }
+    if (/^\d{4}$/.test(y)) return y;
+    return "";
+  }
+
   function formatCompletionFromBasis(basis) {
     const usedate = String(basis?.kaptUsedate ?? basis?.useAprDay ?? "").trim();
     if (/^\d{8}$/.test(usedate)) {
-      const y = usedate.slice(0, 4);
-      const m = usedate.slice(4, 6);
-      return `${y}년 ${m}월`;
+      return formatCompletionYm(usedate.slice(0, 4), usedate.slice(4, 6));
+    }
+    if (/^\d{6}$/.test(usedate)) {
+      return formatCompletionYm(usedate.slice(0, 4), usedate.slice(4, 6));
     }
     const y = String(basis?.buildYear ?? "").trim();
-    if (y && /^\d{4}$/.test(y)) return `${y}년`;
+    if (/^\d{4}$/.test(y)) return y;
     return "";
   }
 
   function formatCompletionFromTradeYear(year) {
     const y = String(year || "").trim();
-    if (y && /^\d{4}$/.test(y)) return `${y}년`;
+    if (/^\d{4}$/.test(y)) return y;
     return "-";
   }
 

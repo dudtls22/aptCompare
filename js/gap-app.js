@@ -550,21 +550,115 @@
     setMessage(`매수 후보 ${slotId} 영역을 삭제했습니다.`);
   }
 
+  function addSelectOptionIfMissing(selectEl, value, label) {
+    const v = String(value || "").trim();
+    if (!v || !selectEl) return;
+    if ([...selectEl.options].some((o) => o.value === v)) return;
+    const opt = document.createElement("option");
+    opt.value = v;
+    opt.textContent = label || v;
+    selectEl.appendChild(opt);
+  }
+
   async function fillSlotFromSaved(slot, saved) {
     if (!saved) return;
-    if (saved.gu) {
-      setupSlotGu(slot, regionSelect.value, saved.gu);
+
+    const lawdCd = String(saved.gu || "").trim();
+    if (lawdCd) {
+      setupSlotGu(slot, regionSelect.value, lawdCd);
       await loadDongForSlot(slot);
     }
-    if (saved.dong) {
-      setSelectValue(slot.dongEl, saved.dong);
+
+    const dongList = [...slot.dongEl.options].map((o) => o.value).filter(Boolean);
+    const resolvedDong = resolvePickToDongOption(saved.dong, dongList);
+    if (resolvedDong) {
+      addSelectOptionIfMissing(slot.dongEl, resolvedDong, resolvedDong);
+      setSelectValue(slot.dongEl, resolvedDong);
       await onSlotDongChange(slot);
     }
-    if (saved.apt) {
-      setSelectValue(slot.aptEl, saved.apt);
-      await onSlotAptChange(slot);
+
+    const slotLawd = getSlotLawdCd(slot);
+    const dongName = slot.dongEl.value.trim();
+    if (saved.apt && slotLawd && dongName) {
+      try {
+        const data = await API.getAptAreaOptions(slotLawd, dongName);
+        const resolvedApt = resolvePickToAptOption(saved.apt, data.aptNames);
+        if (resolvedApt) {
+          addSelectOptionIfMissing(slot.aptEl, resolvedApt, resolvedApt);
+          setSelectValue(slot.aptEl, resolvedApt);
+          await onSlotAptChange(slot);
+          if (saved.area) {
+            const areas = getAreaListForApt(data, resolvedApt);
+            const areaStr = String(saved.area);
+            if (areas.map((a) => String(a)).includes(areaStr)) {
+              setSelectValue(slot.areaEl, areaStr);
+            } else {
+              addSelectOptionIfMissing(slot.areaEl, areaStr, `${areaStr}㎡`);
+              setSelectValue(slot.areaEl, areaStr);
+            }
+          }
+        }
+      } catch {
+        addSelectOptionIfMissing(slot.aptEl, saved.apt, saved.apt);
+        setSelectValue(slot.aptEl, saved.apt);
+        if (saved.area) {
+          addSelectOptionIfMissing(slot.areaEl, String(saved.area), `${saved.area}㎡`);
+          setSelectValue(slot.areaEl, String(saved.area));
+        }
+      }
     }
-    if (saved.area) setSelectValue(slot.areaEl, saved.area);
+
+    void updateStarButton(slot);
+  }
+
+  function indexCacheToGapPayload(indexSaved) {
+    if (!indexSaved) return null;
+    const slots = (indexSaved.slots || []).filter(
+      (r) => r && (r.dong || r.apt || r.area)
+    );
+    const hasCommon =
+      indexSaved.region || indexSaved.gu || indexSaved.months || slots.length;
+    if (!hasCommon) return null;
+
+    const sorted = [...slots].sort((a, b) => (Number(a.id) || 0) - (Number(b.id) || 0));
+    const baseline = {
+      gu: String(indexSaved.gu || "").trim(),
+      dong: "",
+      apt: "",
+      area: ""
+    };
+    const candidates = [];
+
+    if (sorted.length) {
+      const first = sorted[0];
+      baseline.dong = first.dong || "";
+      baseline.apt = first.apt || "";
+      baseline.area = first.area || "";
+      for (let i = 1; i < sorted.length && candidates.length < MAX_CAND_SLOTS; i++) {
+        const row = sorted[i];
+        candidates.push({
+          id: candidates.length + 1,
+          gu: baseline.gu,
+          dong: row.dong || "",
+          apt: row.apt || "",
+          area: row.area || ""
+        });
+      }
+    }
+
+    return {
+      region: indexSaved.region || "",
+      months: indexSaved.months || "12",
+      baseline,
+      candidates
+    };
+  }
+
+  function hasSavedGapPayload(saved) {
+    if (!saved) return false;
+    if (saved.region || saved.months) return true;
+    if (hasSavedSlotValues(saved.baseline)) return true;
+    return (saved.candidates || []).some(hasSavedSlotValues);
   }
 
   function migrateLegacySaved(saved) {
@@ -628,15 +722,23 @@
     updateAddCandButton();
   }
 
-  async function restoreGapState() {
+  function loadSavedGapPayload() {
     const raw = loadGapCache();
-    const saved = migrateLegacySaved(raw);
-    if (!saved) return false;
+    let saved = migrateLegacySaved(raw);
+    if (!hasSavedGapPayload(saved) && P?.loadIndexCache) {
+      const fromIndex = indexCacheToGapPayload(P.loadIndexCache());
+      if (fromIndex) saved = fromIndex;
+    }
+    return saved;
+  }
+
+  async function restoreGapState() {
+    const saved = loadSavedGapPayload();
+    if (!hasSavedGapPayload(saved)) return false;
 
     if (saved.region) {
       regionSelect.value = saved.region;
       updateDistrictLabels(saved.region);
-      syncAllSlotGuFromRegion(saved.region);
     }
     if (saved.months && monthsSelect) {
       monthsSelect.value = String(saved.months);
@@ -1116,11 +1218,7 @@
   }
 
   function hasGapCacheToRestore() {
-    const saved = migrateLegacySaved(loadGapCache());
-    if (!saved) return false;
-    if (saved.region || saved.months) return true;
-    if (hasSavedSlotValues(saved.baseline)) return true;
-    return (saved.candidates || []).some(hasSavedSlotValues);
+    return hasSavedGapPayload(loadSavedGapPayload());
   }
 
   async function boot() {
@@ -1140,10 +1238,6 @@
       });
     }
 
-    if (candSlots.length === 0) {
-      addCandSlot();
-    }
-
     const shouldRestoreGap = hasGapCacheToRestore();
     if (shouldRestoreGap) setGapRestoreUi(true);
 
@@ -1154,6 +1248,10 @@
       }
     } finally {
       setGapRestoreUi(false);
+    }
+
+    if (candSlots.length === 0) {
+      addCandSlot();
     }
 
     saveGapState();
